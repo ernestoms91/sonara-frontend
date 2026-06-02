@@ -80,5 +80,5 @@ export async function loginAction(prevState: LoginState, formData: FormData) {
   }
 
   // 4. Redirigir
-  redirect("/user/dashboard");
+  redirect("/user/audios");
 }

@@ -92,13 +92,40 @@ export function AudioCard({ audio, onDelete }: AudioCardProps) {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!audio.audio_url) return;
 
-    const link = document.createElement("a");
-    link.href = audio.audio_url;
-    link.download = `${audio.code}.wav`;
-    link.click();
+    try {
+      // Obtener el audio como blob
+      const response = await fetch(audio.audio_url);
+
+      if (!response.ok) {
+        throw new Error(`Error al descargar: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+
+      // Crear URL de objeto blob
+      const blobUrl = URL.createObjectURL(blob);
+
+      // Crear enlace de descarga
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${audio.code}.wav`; // o .mp3 según el formato real
+
+      // Simular clic y limpiar
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Liberar memoria del blob
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Error al descargar audio:", error);
+
+      // Fallback: abrir en nueva ventana si falla la descarga
+      window.open(audio.audio_url, "_blank");
+    }
   };
 
   // Limpiar al desmontar

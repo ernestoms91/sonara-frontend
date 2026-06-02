@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/common/Pagination";
 import { AudioCard } from "@/components/features/audios/AudioCard";
-import { AudioFromAPI, AudioItem, AudioListApiResponse } from "@/types/audio";
+import { AudioFromAPI, AudioListApiResponse } from "@/types/audio";
 import { convertToAudioItem } from "@/lib/audio-utils";
+import { toast } from "sonner";
+import { deleteAudio } from "@/app/actions/audio.actions";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export default function AudiosPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,6 +19,12 @@ export default function AudiosPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [audioToDelete, setAudioToDelete] = useState<{
+    id: number;
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     const fetchAudios = async () => {
@@ -48,9 +57,33 @@ export default function AudiosPage() {
     fetchAudios();
   }, [currentPage]);
 
-  const handleDelete = (audio: AudioItem) => {
-    console.log("Delete:", audio);
-  };
+  // Abrir diálogo de confirmación
+  const handleDeleteClick = useCallback(
+    (audioId: number, audioText: string) => {
+      setAudioToDelete({ id: audioId, text: audioText });
+      setDeleteDialogOpen(true);
+    },
+    [],
+  );
+
+  // Eliminar después de confirmar
+  const handleConfirmDelete = useCallback(async () => {
+    if (!audioToDelete) return;
+
+    startTransition(async () => {
+      const result = await deleteAudio(audioToDelete.id);
+
+      if (result.success) {
+        toast.success("Audio eliminado correctamente");
+        setAudios((prev) => prev.filter((a) => a.id !== audioToDelete.id));
+      } else {
+        toast.error(result.error || "Error al eliminar el audio");
+      }
+
+      setDeleteDialogOpen(false);
+      setAudioToDelete(null);
+    });
+  }, [audioToDelete]);
 
   const filteredAudios = audios.filter((audio) =>
     audio.text.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -95,65 +128,78 @@ export default function AudiosPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="block px-4 py-3 sm:hidden">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-foreground">Mis Audios</h1>
-            <Button
-              size="sm"
-              className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Plus className="size-3.5" />
-              Nuevo
+    <>
+      <div className="flex h-full flex-col">
+        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
+          <div className="block px-4 py-3 sm:hidden">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold text-foreground">Mis Audios</h1>
+              <Button
+                size="sm"
+                className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Plus className="size-3.5" />
+                Nuevo
+              </Button>
+            </div>
+            <div className="relative mt-3 w-full">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Buscar audios..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+
+          <div className="hidden px-4 py-3 sm:flex sm:items-center sm:justify-between md:px-6 lg:px-8">
+            <h1 className="text-xl font-bold text-foreground md:text-2xl lg:text-3xl">
+              Mis Audios
+            </h1>
+
+            <div className="relative w-64 md:w-64 lg:w-96">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Buscar audios..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Plus className="size-4" />
+              Nuevo<span className="hidden lg:inline"> Audio</span>
             </Button>
           </div>
-          <div className="relative mt-3 w-full">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Buscar audios..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+        </header>
+
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          <div className="mx-auto max-w-5xl space-y-3 md:space-y-4">
+            {paginatedAudios.map((audio) => (
+              <AudioCard
+                key={audio.id}
+                audio={convertToAudioItem(audio)}
+                onDelete={() => handleDeleteClick(audio.id, audio.text)}
+              />
+            ))}
           </div>
-        </div>
-
-        <div className="hidden px-4 py-3 sm:flex sm:items-center sm:justify-between md:px-6 lg:px-8">
-          <h1 className="text-xl font-bold text-foreground md:text-2xl lg:text-3xl">
-            Mis Audios
-          </h1>
-
-          <div className="relative w-64 md:w-64 lg:w-96">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Buscar audios..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
-          <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-            <Plus className="size-4" />
-            Nuevo<span className="hidden lg:inline"> Audio</span>
-          </Button>
-        </div>
-      </header>
-
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-        <div className="mx-auto max-w-5xl space-y-3 md:space-y-4">
-          {paginatedAudios.map((audio) => (
-            <AudioCard
-              key={audio.id}
-              audio={convertToAudioItem(audio)}
-              onDelete={handleDelete}
-            />
-          ))}
         </div>
       </div>
-    </div>
+
+      {/* Diálogo de confirmación */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Eliminar audio"
+        description={`¿Estás seguro de que quieres eliminar "${audioToDelete?.text?.substring(0, 50)}..."? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        destructive={true}
+        onConfirm={handleConfirmDelete}
+      />
+    </>
   );
 }
