@@ -62,9 +62,8 @@ export async function deleteAudio(audioId: number) {
   }
 }
 
-export async function createAudio(text: string) {
+export async function createAudio(profileId: number, text: string) {
   try {
-    // Obtener el token de la cookie
     const cookieStore = await cookies();
     const token = cookieStore.get("access_token")?.value;
 
@@ -75,34 +74,19 @@ export async function createAudio(text: string) {
       };
     }
 
-    // Primero necesitas obtener un profile_id (perfil de voz)
-    // Opción 1: Obtener el perfil por defecto del usuario
-    const profileResponse = await fetch(`${BACKEND_URL}/api/v1/profile/my`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!profileResponse.ok) {
-      return {
-        success: false,
-        error: "No se encontró un perfil de voz. Crea uno primero.",
-      };
-    }
-
-    const profileData = await profileResponse.json();
-    const profileId = profileData.data?.id || profileData.id;
-
     if (!profileId) {
       return {
         success: false,
-        error: "No se encontró un perfil de voz.",
+        error: "Debes seleccionar un perfil de voz.",
       };
     }
 
-    // Generar el audio
-    const formData = new FormData();
-    formData.append("text", text);
+    if (!text.trim()) {
+      return {
+        success: false,
+        error: "El texto no puede estar vacío.",
+      };
+    }
 
     const response = await fetch(
       `${BACKEND_URL}/api/v1/audio/generate/${profileId}`,
@@ -110,8 +94,9 @@ export async function createAudio(text: string) {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json", // ← Importante
         },
-        body: formData,
+        body: JSON.stringify({ text }), // ← Enviar como JSON
       },
     );
 
@@ -125,7 +110,6 @@ export async function createAudio(text: string) {
 
     const result = await response.json();
 
-    // Revalidar la ruta para mostrar el nuevo audio
     revalidatePath("/user/audios");
 
     return {

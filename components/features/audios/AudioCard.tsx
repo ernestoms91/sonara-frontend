@@ -1,6 +1,13 @@
 "use client";
 
-import { Play, Pause, Download, Trash2 } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Download,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { WaveformWithProgress } from "./Waveform";
 
@@ -38,9 +45,10 @@ const parseDuration = (durationStr: string): number => {
 export function AudioCard({ audio, onDelete }: AudioCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [isTextExpanded, setIsTextExpanded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const animationRef = useRef<number | undefined>(undefined);
-  const listenersAttachedRef = useRef(false); // ← Usar ref en lugar de setAttribute
+  const listenersAttachedRef = useRef(false);
   const durationSeconds = parseDuration(audio.duration);
 
   const updateTime = () => {
@@ -52,7 +60,7 @@ export function AudioCard({ audio, onDelete }: AudioCardProps) {
 
   const handlePlayPause = () => {
     if (!audio.audio_url) return;
-    // Crear el audio UNA SOLA VEZ
+
     if (!audioRef.current) {
       const audioElement = new Audio(audio.audio_url);
       audioRef.current = audioElement;
@@ -67,7 +75,6 @@ export function AudioCard({ audio, onDelete }: AudioCardProps) {
         cancelAnimationFrame(animationRef.current);
       }
     } else {
-      // Los event listeners se agregan solo una vez
       if (!listenersAttachedRef.current) {
         listenersAttachedRef.current = true;
         audioElement?.addEventListener("ended", () => {
@@ -96,7 +103,6 @@ export function AudioCard({ audio, onDelete }: AudioCardProps) {
     if (!audio.audio_url) return;
 
     try {
-      // Obtener el audio como blob
       const response = await fetch(audio.audio_url);
 
       if (!response.ok) {
@@ -104,31 +110,20 @@ export function AudioCard({ audio, onDelete }: AudioCardProps) {
       }
 
       const blob = await response.blob();
-
-      // Crear URL de objeto blob
       const blobUrl = URL.createObjectURL(blob);
-
-      // Crear enlace de descarga
       const link = document.createElement("a");
       link.href = blobUrl;
-      link.download = `${audio.code}.wav`; // o .mp3 según el formato real
-
-      // Simular clic y limpiar
+      link.download = `${audio.code}.wav`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      // Liberar memoria del blob
       URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("Error al descargar audio:", error);
-
-      // Fallback: abrir en nueva ventana si falla la descarga
       window.open(audio.audio_url, "_blank");
     }
   };
 
-  // Limpiar al desmontar
   useEffect(() => {
     return () => {
       if (animationRef.current) {
@@ -160,9 +155,35 @@ export function AudioCard({ audio, onDelete }: AudioCardProps) {
           <span className="text-xs text-muted-foreground">{audio.timeAgo}</span>
         </div>
 
-        <p className="line-clamp-2 text-sm text-foreground sm:line-clamp-1">
-          {audio.text}
-        </p>
+        {/* Texto con toggle y respeto de saltos de línea */}
+        <div>
+          <p
+            className={`text-sm text-foreground whitespace-pre-wrap break-words ${
+              !isTextExpanded ? "line-clamp-2" : ""
+            }`}
+          >
+            {audio.text}
+          </p>
+
+          {audio.text.length > 80 && (
+            <button
+              onClick={() => setIsTextExpanded(!isTextExpanded)}
+              className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline transition-colors"
+            >
+              {isTextExpanded ? (
+                <>
+                  <ChevronUp className="size-3" />
+                  Ver menos
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="size-3" />
+                  Ver más
+                </>
+              )}
+            </button>
+          )}
+        </div>
 
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
