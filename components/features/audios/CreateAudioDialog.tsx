@@ -52,6 +52,7 @@ export function CreateAudioDialog({ onSuccess }: CreateAudioDialogProps) {
         const result = await getProfiles();
         if (result.success && result.profiles) {
           setProfiles(result.profiles);
+          // Solo establecer el primer perfil si no hay uno seleccionado
           if (result.profiles.length > 0 && !profileId) {
             setProfileId(result.profiles[0].id.toString());
           }
@@ -62,7 +63,7 @@ export function CreateAudioDialog({ onSuccess }: CreateAudioDialogProps) {
       };
       loadProfiles();
     }
-  }, [open]);
+  }, [open, profileId]); // Agregado profileId a dependencias
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +108,15 @@ export function CreateAudioDialog({ onSuccess }: CreateAudioDialogProps) {
           Nuevo<span className="hidden lg:inline"> Audio</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+        }}
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+        }}
+      >
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Crear nuevo audio</DialogTitle>
@@ -121,13 +130,16 @@ export function CreateAudioDialog({ onSuccess }: CreateAudioDialogProps) {
               <label className="text-sm font-medium">Seleccionar voz</label>
               <Select
                 value={profileId}
-                onValueChange={setProfileId}
+                onValueChange={(value) => {
+                  console.log("Valor seleccionado:", value); // Para debug
+                  setProfileId(value);
+                }}
                 disabled={isLoadingProfiles || profiles.length === 0}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona una voz" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" side="bottom">
                   {isLoadingProfiles ? (
                     <SelectItem value="loading" disabled>
                       Cargando voces...

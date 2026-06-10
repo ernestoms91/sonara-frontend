@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 import type { LucideIcon } from "lucide-react";
-import { AudioLines, Mic2, Settings, HelpCircle, LogOut } from "lucide-react";
+import { AudioLines, Mic2, Newspaper, LogOut } from "lucide-react";
 
 import {
   Sidebar,
@@ -34,24 +34,14 @@ interface AppSidebarProps {
 
 const navItems: NavItem[] = [
   {
-    title: "Mis Audios",
+    title: "Audios",
     url: "/user/audios",
     icon: AudioLines,
   },
   {
-    title: "Modelos de Voz",
-    url: "/user/voices",
-    icon: Mic2,
-  },
-  {
-    title: "Configuración",
-    url: "/user/settings",
-    icon: Settings,
-  },
-  {
-    title: "Ayuda",
-    url: "/user/help",
-    icon: HelpCircle,
+    title: "Boletines",
+    url: "/user/boletines",
+    icon: Newspaper,
   },
 ];
 
