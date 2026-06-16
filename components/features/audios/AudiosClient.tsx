@@ -2,7 +2,8 @@
 "use client";
 
 import { useState, useTransition, useCallback } from "react";
-import { Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AudioCard } from "@/components/features/audios/AudioCard";
@@ -25,11 +26,12 @@ interface AudiosClientProps {
       pages: number;
     };
   };
+  currentPage: number;
 }
 
-export function AudiosClient({ initialData }: AudiosClientProps) {
+export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [audios, setAudios] = useState(initialData.data?.items || []);
   const [isPending, startTransition] = useTransition();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -38,10 +40,11 @@ export function AudiosClient({ initialData }: AudiosClientProps) {
     text: string;
   } | null>(null);
 
-  const refreshAudios = useCallback(async () => {
-    // Recargar la página para obtener los nuevos audios
-    window.location.reload();
-  }, []);
+  const { total, pages: totalPages, size: pageSize } = initialData.data;
+
+  const refreshAudios = useCallback(() => {
+    router.refresh();
+  }, [router]);
 
   const handleDeleteClick = useCallback(
     (audioId: number, audioText: string) => {
@@ -59,7 +62,12 @@ export function AudiosClient({ initialData }: AudiosClientProps) {
 
       if (result.success) {
         toast.success("Audio eliminado correctamente");
-        setAudios((prev) => prev.filter((a) => a.id !== audioToDelete.id));
+
+        if (audios.length === 1 && currentPage > 1) {
+          router.push(`/user/audios?page=${currentPage - 1}&size=${pageSize}`);
+        } else {
+          router.refresh();
+        }
       } else {
         toast.error(result.error || "Error al eliminar el audio");
       }
@@ -67,26 +75,33 @@ export function AudiosClient({ initialData }: AudiosClientProps) {
       setDeleteDialogOpen(false);
       setAudioToDelete(null);
     });
-  }, [audioToDelete]);
+  }, [audioToDelete, audios.length, currentPage, pageSize, router]);
 
-  const filteredAudios = audios.filter((audio) =>
-    audio.text.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-  const itemsPerPage = 5;
-  const paginatedAudios = filteredAudios.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
+  const filteredAudios =
+    searchQuery.trim() === ""
+      ? audios
+      : audios.filter((audio) =>
+          audio.text.toLowerCase().includes(searchQuery.toLowerCase()),
+        );
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    router.push(`/user/audios?page=${page}&size=${pageSize}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const localTotalPages = Math.ceil(filteredAudios.length / itemsPerPage);
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
 
-  if (audios.length === 0 && !initialData.data?.items?.length) {
+  if (isPending) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (total === 0) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
@@ -100,38 +115,17 @@ export function AudiosClient({ initialData }: AudiosClientProps) {
   return (
     <>
       <div className="flex h-full flex-col">
-        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
-          {/* Mobile header */}
-          <div className="block px-4 py-3 sm:hidden">
-            <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-foreground">Mis Audios</h1>
-              <CreateAudioDialog onSuccess={refreshAudios} />
-            </div>
-            <div className="relative mt-3 w-full">
+        {/* Header simplificado */}
+        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md px-4 py-3 md:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-xl font-bold md:text-2xl">Mis Audios</h1>
+
+            <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                type="text"
                 placeholder="Buscar audios..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </div>
-
-          {/* Desktop header */}
-          <div className="hidden px-4 py-3 sm:flex sm:items-center sm:justify-between md:px-6 lg:px-8">
-            <h1 className="text-xl font-bold text-foreground md:text-2xl lg:text-3xl">
-              Mis Audios
-            </h1>
-
-            <div className="relative w-64 md:w-64 lg:w-96">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Buscar audios..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearch}
                 className="pl-9"
               />
             </div>
@@ -140,40 +134,57 @@ export function AudiosClient({ initialData }: AudiosClientProps) {
           </div>
         </header>
 
+        {/* Lista de audios */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          <div className="mx-auto max-w-5xl space-y-3 md:space-y-4">
-            {paginatedAudios.map((audio) => (
-              <AudioCard
-                key={audio.id}
-                audio={convertToAudioItem(audio)}
-                onDelete={() => handleDeleteClick(audio.id, audio.text)}
-              />
-            ))}
+          <div className="mx-auto max-w-5xl space-y-3">
+            {filteredAudios.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  {searchQuery
+                    ? "No se encontraron resultados"
+                    : "No hay audios"}
+                </p>
+              </div>
+            ) : (
+              filteredAudios.map((audio) => (
+                <AudioCard
+                  key={audio.id}
+                  audio={convertToAudioItem(audio)}
+                  onDelete={() => handleDeleteClick(audio.id, audio.text)}
+                />
+              ))
+            )}
           </div>
         </div>
 
-        {localTotalPages > 1 && (
+        {/* Paginación simple y moderna */}
+        {totalPages > 1 && (
           <div className="border-t border-border p-4">
-            <div className="flex justify-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
               >
-                Anterior
+                <ChevronLeft className="size-4" />
               </Button>
-              <span className="flex items-center px-4 text-sm">
-                Página {currentPage} de {localTotalPages}
+
+              <span className="text-sm px-3">
+                {currentPage} / {totalPages}
               </span>
+
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === localTotalPages}
+                disabled={currentPage === totalPages}
               >
-                Siguiente
+                <ChevronRight className="size-4" />
               </Button>
+            </div>
+            <div className="text-center text-xs text-muted-foreground mt-2">
+              {total} audio{total !== 1 ? "s" : ""}
             </div>
           </div>
         )}
@@ -183,7 +194,7 @@ export function AudiosClient({ initialData }: AudiosClientProps) {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         title="Eliminar audio"
-        description={`¿Estás seguro de que quieres eliminar "${audioToDelete?.text?.substring(0, 50)}..."? Esta acción no se puede deshacer.`}
+        description={`¿Estás seguro de que quieres eliminar "${audioToDelete?.text?.substring(0, 50)}..."?`}
         confirmText="Eliminar"
         destructive={true}
         onConfirm={handleConfirmDelete}

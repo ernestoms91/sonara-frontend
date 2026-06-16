@@ -3,9 +3,17 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 import type { LucideIcon } from "lucide-react";
-import { AudioLines, Mic2, Newspaper, LogOut } from "lucide-react";
+import {
+  AudioLines,
+  Mic2,
+  Newspaper,
+  LogOut,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -16,6 +24,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 import { ThemeButtonDynamic } from "./theme-button-dynamic";
 
@@ -23,6 +34,17 @@ interface NavItem {
   title: string;
   url: string;
   icon: LucideIcon;
+}
+
+interface SubNavItem {
+  title: string;
+  url: string;
+}
+
+interface NavGroup {
+  title: string;
+  icon: LucideIcon;
+  subItems: SubNavItem[];
 }
 
 interface AppSidebarProps {
@@ -38,12 +60,22 @@ const navItems: NavItem[] = [
     url: "/user/audios",
     icon: AudioLines,
   },
-  {
-    title: "Boletines",
-    url: "/user/boletines",
-    icon: Newspaper,
-  },
 ];
+
+const boletinesGroup: NavGroup = {
+  title: "Boletines",
+  icon: Newspaper,
+  subItems: [
+    {
+      title: "Crear boletín",
+      url: "/user/boletin/crear",
+    },
+    {
+      title: "Listar boletines",
+      url: "/user/boletin/listar",
+    },
+  ],
+};
 
 export function AppSidebar({
   user = {
@@ -52,6 +84,10 @@ export function AppSidebar({
   },
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const [isBoletinesOpen, setIsBoletinesOpen] = useState(() => {
+    // Abrir automáticamente si alguna subruta está activa
+    return pathname.startsWith("/user/boletines");
+  });
 
   const initials = user.name
     .split(" ")
@@ -61,7 +97,11 @@ export function AppSidebar({
     .toUpperCase();
 
   const isItemActive = (url: string) => {
-    return pathname === url || pathname.startsWith(`${url}/`);
+    return pathname === url;
+  };
+
+  const isBoletinesActive = () => {
+    return pathname.startsWith("/user/boletines");
   };
 
   return (
@@ -91,6 +131,7 @@ export function AppSidebar({
 
       <SidebarContent className="py-4 lg:py-6">
         <SidebarMenu className="space-y-1 lg:space-y-2">
+          {/* Items normales */}
           {navItems.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
@@ -109,6 +150,45 @@ export function AppSidebar({
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
+
+          {/* Grupo desplegable de Boletines */}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => setIsBoletinesOpen(!isBoletinesOpen)}
+              isActive={isBoletinesActive()}
+              className="px-3 py-2 text-sm lg:px-4 lg:py-2.5 lg:text-base"
+            >
+              <div className="flex w-full items-center justify-between">
+                <div className="flex items-center gap-3 lg:gap-4">
+                  <Newspaper className="size-5 shrink-0" />
+                  <span className="truncate font-medium">Boletines</span>
+                </div>
+                {isBoletinesOpen ? (
+                  <ChevronDown className="size-4 shrink-0" />
+                ) : (
+                  <ChevronRight className="size-4 shrink-0" />
+                )}
+              </div>
+            </SidebarMenuButton>
+
+            {isBoletinesOpen && (
+              <SidebarMenuSub>
+                {boletinesGroup.subItems.map((subItem) => (
+                  <SidebarMenuSubItem key={subItem.title}>
+                    <SidebarMenuSubButton
+                      asChild
+                      isActive={pathname === subItem.url}
+                      className="pl-11 lg:pl-12"
+                    >
+                      <Link href={subItem.url}>
+                        <span>{subItem.title}</span>
+                      </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                ))}
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
 

@@ -2,8 +2,10 @@
 export interface AudioFromAPI {
   id: number;
   audio_id: string;
+  title: string;
   text: string;
   duration: number;
+  character_count: number;
   created_at: string;
   profile_id: number;
   waveform: string;

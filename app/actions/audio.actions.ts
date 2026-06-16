@@ -25,7 +25,7 @@ export async function deleteAudio(audioId: number) {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // ← Enviar token
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -50,7 +50,7 @@ export async function deleteAudio(audioId: number) {
     }
 
     // 5. Revalidar la ruta para actualizar la UI
-    revalidatePath("/user/audios");
+    revalidatePath("user/audios");
 
     return { success: true };
   } catch (error) {
@@ -94,9 +94,9 @@ export async function createAudio(profileId: number, text: string) {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json", // ← Importante
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text }), // ← Enviar como JSON
+        body: JSON.stringify({ text }),
       },
     );
 
@@ -122,5 +122,36 @@ export async function createAudio(profileId: number, text: string) {
       success: false,
       error: "Error de conexión con el servidor",
     };
+  }
+}
+
+export async function loadMoreAudios(page: number, size: number = 30) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
+
+  if (!token) {
+    return { error: "No autorizado", data: null };
+  }
+
+  try {
+    const response = await fetch(
+      `${BACKEND_URL}/api/v1/audio/all?page=${page}&size=${size}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      return { error: `Error ${response.status}`, data: null };
+    }
+
+    const data = await response.json();
+    return { error: null, data };
+  } catch (error) {
+    return { error: "Error de conexión", data: null };
   }
 }
