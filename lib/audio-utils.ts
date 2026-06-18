@@ -33,6 +33,7 @@ export const convertToAudioItem = (audio: AudioFromAPI): AudioItem => {
     code: `SON-${audio.id.toString().padStart(3, "0")}`,
     voice: audio.profile_name,
     voiceName: audio.profile_name,
+    voiceName2: audio.secondary_profile_name,
     text: audio.text,
     duration: formatDuration(audio.duration),
     timeAgo: formatTimeAgo(audio.created_at),

@@ -6,62 +6,56 @@ import { revalidatePath } from "next/cache";
 
 const BACKEND_URL = process.env.BACKEND_URL;
 
-export async function deleteAudio(audioId: number) {
-  try {
-    // 1. Obtener el token de la cookie
-    const cookieStore = await cookies();
-    const token = cookieStore.get("access_token")?.value;
+// ============================================
+// GET AUDIOS - Obtener lista de audios (unificada)
+// ============================================
+export async function getAudios(page: number = 1, size: number = 30) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
 
-    // 2. Verificar que el token existe
-    if (!token) {
+  if (!token) {
+    return {
+      success: false,
+      error: "No autorizado. Inicia sesión primero.",
+      data: null,
+    };
+  }
+
+  try {
+    const response = await fetch(
+      `${BACKEND_URL}/api/v1/audio/all?page=${page}&size=${size}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
       return {
         success: false,
-        error: "No autorizado. Inicia sesión primero.",
+        error: `Error ${response.status}: ${response.statusText}`,
+        data: null,
       };
     }
 
-    // 3. Llamar al backend con el token
-    const response = await fetch(`${BACKEND_URL}/api/v1/audio/${audioId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    // 4. Manejar errores del backend
-    if (!response.ok) {
-      if (response.status === 401) {
-        return {
-          success: false,
-          error: "Sesión expirada. Inicia sesión nuevamente.",
-        };
-      }
-      if (response.status === 403) {
-        return {
-          success: false,
-          error: "No tienes permiso para eliminar este audio.",
-        };
-      }
-      if (response.status === 404) {
-        return { success: false, error: "Audio no encontrado." };
-      }
-      return { success: false, error: `Error ${response.status}` };
-    }
-
-    // 5. Revalidar la ruta para actualizar la UI
-    revalidatePath("user/audios");
-
-    return { success: true };
+    const data = await response.json();
+    return { success: true, error: null, data };
   } catch (error) {
-    console.error("Error en deleteAudio:", error);
+    console.error("Error en getAudios:", error);
     return {
       success: false,
       error: "Error de conexión con el servidor",
+      data: null,
     };
   }
 }
 
+// ============================================
+// CREATE AUDIO - Generar un nuevo audio
+// ============================================
 export async function createAudio(profileId: number, text: string) {
   try {
     const cookieStore = await cookies();
@@ -125,33 +119,56 @@ export async function createAudio(profileId: number, text: string) {
   }
 }
 
-export async function loadMoreAudios(page: number, size: number = 30) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
-
-  if (!token) {
-    return { error: "No autorizado", data: null };
-  }
-
+// ============================================
+// DELETE AUDIO - Eliminar un audio
+// ============================================
+export async function deleteAudio(audioId: number) {
   try {
-    const response = await fetch(
-      `${BACKEND_URL}/api/v1/audio/all?page=${page}&size=${size}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      },
-    );
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
 
-    if (!response.ok) {
-      return { error: `Error ${response.status}`, data: null };
+    if (!token) {
+      return {
+        success: false,
+        error: "No autorizado. Inicia sesión primero.",
+      };
     }
 
-    const data = await response.json();
-    return { error: null, data };
+    const response = await fetch(`${BACKEND_URL}/api/v1/audio/${audioId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return {
+          success: false,
+          error: "Sesión expirada. Inicia sesión nuevamente.",
+        };
+      }
+      if (response.status === 403) {
+        return {
+          success: false,
+          error: "No tienes permiso para eliminar este audio.",
+        };
+      }
+      if (response.status === 404) {
+        return { success: false, error: "Audio no encontrado." };
+      }
+      return { success: false, error: `Error ${response.status}` };
+    }
+
+    revalidatePath("/user/audios");
+
+    return { success: true, error: null };
   } catch (error) {
-    return { error: "Error de conexión", data: null };
+    console.error("Error en deleteAudio:", error);
+    return {
+      success: false,
+      error: "Error de conexión con el servidor",
+    };
   }
 }

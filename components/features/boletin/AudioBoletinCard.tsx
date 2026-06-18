@@ -108,7 +108,7 @@ function formatBoletinText(text: string, isExpanded: boolean): React.ReactNode {
   if (!isExpanded) {
     const truncated = text.length > 150 ? text.substring(0, 150) + "..." : text;
     return (
-      <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap break-words">
+      <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap wrap-break-word">
         {truncated}
       </p>
     );
@@ -125,7 +125,7 @@ function formatBoletinText(text: string, isExpanded: boolean): React.ReactNode {
           return (
             <p
               key={idx}
-              className="text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap break-words leading-relaxed"
+              className="text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap wrap-break-word leading-relaxed"
             >
               {paragraph.trim()}
             </p>
@@ -159,7 +159,7 @@ export function AudioBoletinCard({
           : "hover:border-primary/30"
       }`}
     >
-      <div className="h-1 bg-gradient-to-r from-primary/80 via-primary to-primary/80" />
+      <div className="h-1 bg-linear-to-r from-primary/80 via-primary to-primary/80" />
 
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 px-3 pt-3 sm:pt-4 sm:px-4">
         <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
@@ -178,10 +178,21 @@ export function AudioBoletinCard({
                 className="text-[10px] sm:text-xs bg-primary/10 text-primary hover:bg-primary/20 px-1.5 py-0 sm:px-2"
               >
                 <User className="size-2.5 sm:size-3 mr-0.5 sm:mr-1" />
-                <span className="truncate max-w-[80px] sm:max-w-none">
+                <span className="truncate max-w-20 sm:max-w-none">
                   {boletin.profile_name}
                 </span>
               </Badge>
+              {boletin.secondary_profile_name && (
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] sm:text-xs bg-primary/10 text-primary hover:bg-primary/20 px-1.5 py-0 sm:px-2"
+                >
+                  <User className="size-2.5 sm:size-3 mr-0.5 sm:mr-1" />
+                  <span className="truncate max-w-20 sm:max-w-none">
+                    {boletin.secondary_profile_name}
+                  </span>
+                </Badge>
+              )}
               <Badge
                 variant="outline"
                 className="text-[10px] sm:text-xs border-primary/30 text-foreground/70 px-1.5 py-0 sm:px-2"

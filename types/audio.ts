@@ -10,6 +10,7 @@ export interface AudioFromAPI {
   profile_id: number;
   waveform: string;
   profile_name: string;
+  secondary_profile_name: string;
   waveform_url: string;
   audio_url: string;
 }
@@ -32,6 +33,7 @@ export interface AudioItem {
   code: string;
   voice: string;
   voiceName: string;
+  voiceName2: string;
   text: string;
   duration: string;
   timeAgo: string;

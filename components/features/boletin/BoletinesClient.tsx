@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import Link from "next/link";
 import { AudioFromAPI } from "@/types/audio";
-import { loadMoreAudios } from "@/app/actions/audio.actions";
+import { getAudios } from "@/app/actions/audio.actions";
 import { OrdenarBoletinesModal } from "./OrdenarBoletinesModal";
 import { AudioBoletinCard } from "./AudioBoletinCard";
 import { createCompoundBoletin } from "@/app/actions/boletin.actions";
@@ -58,7 +58,7 @@ export function BoletinesClient({
     const nextPage = currentPageState + 1;
 
     try {
-      const result = await loadMoreAudios(nextPage, 30);
+      const result = await getAudios(nextPage, 30);
 
       if (result.error) {
         toast.error("Error al cargar más boletines");

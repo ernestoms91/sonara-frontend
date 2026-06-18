@@ -16,6 +16,7 @@ export interface AudioItem {
   code: string;
   voice: string;
   voiceName: string;
+  voiceName2?: string;
   text: string;
   duration: string;
   timeAgo: string;
@@ -143,13 +144,19 @@ export function AudioCard({ audio, onDelete }: AudioCardProps) {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-mono text-primary">
-              #{audio.code}
+              #{audio.code.length > 3 ? audio.code.slice(-3) : audio.code}
             </span>
             <span className="text-xs text-muted-foreground">
               Voz:{" "}
               <span className="font-semibold text-foreground">
                 {audio.voiceName}
               </span>
+              {audio.voiceName2 && (
+                <span className="font-semibold text-foreground">
+                  {" / "}
+                  {audio.voiceName2}
+                </span>
+              )}
             </span>
           </div>
           <span className="text-xs text-muted-foreground">{audio.timeAgo}</span>
@@ -158,7 +165,7 @@ export function AudioCard({ audio, onDelete }: AudioCardProps) {
         {/* Texto con toggle y respeto de saltos de línea */}
         <div>
           <p
-            className={`text-sm text-foreground whitespace-pre-wrap break-words ${
+            className={`text-sm text-foreground whitespace-pre-wrap wrap-break-word ${
               !isTextExpanded ? "line-clamp-2" : ""
             }`}
           >

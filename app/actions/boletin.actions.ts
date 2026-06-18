@@ -13,6 +13,62 @@ interface ApiResponseError {
   timestamp: string;
 }
 
+// ============================================
+// GET BOLETINES - Obtener lista de boletines
+// ============================================
+export async function getBoletines(page: number = 1, size: number = 30) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
+
+  if (!token) {
+    return {
+      success: false,
+      error: "No autorizado. Inicia sesión primero.",
+      data: null,
+    };
+  }
+
+  try {
+    const response = await fetch(
+      `${BACKEND_URL}/api/v1/audio/all?page=${page}&size=${size}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `Error ${response.status}: ${response.statusText}`,
+        data: null,
+      };
+    }
+
+    const data = await response.json();
+
+    // Log para verificar
+    console.log(
+      `Cargados ${data.data?.items?.length || 0} boletines de ${data.data?.total || 0} totales`,
+    );
+
+    return { success: true, error: null, data };
+  } catch (error) {
+    console.error("Error en getBoletines:", error);
+    return {
+      success: false,
+      error: "Error de conexión con el servidor",
+      data: null,
+    };
+  }
+}
+
+// ============================================
+// CREATE COMPOUND BOLETIN - Crear boletín compuesto
+// ============================================
 export async function createCompoundBoletin(
   orderedIds: string[],
   startTime: string,
@@ -78,7 +134,7 @@ export async function createCompoundBoletin(
     revalidatePath("/user/boletin/crear");
     revalidatePath("/user/boletines");
 
-    return { success: true };
+    return { success: true, error: null };
   } catch (error) {
     console.error("Error en createCompoundBoletin:", error);
     return { success: false, error: "Error de conexión con el servidor" };
