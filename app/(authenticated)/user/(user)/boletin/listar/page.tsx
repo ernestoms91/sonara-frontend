@@ -21,9 +21,9 @@ export default async function ListarBoletinesPage({
     throw new Error(result.error || "Error al cargar boletines");
   }
 
-  console.log(result.data);
   return (
     <ListarBoletinesClient
+      key={`${currentPage}-${pageSize}`}
       initialData={result.data}
       currentPage={currentPage}
     />

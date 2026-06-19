@@ -29,6 +29,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Pagination } from "@/components/common/Pagination";
 
 interface BoletinFromAPI {
   id: number;
@@ -97,7 +98,7 @@ export default function ListarBoletinesClient({
 
         if (boletines.length === 1 && currentPage > 1) {
           router.push(
-            `/user/boletines/listar?page=${currentPage - 1}&size=${pageSize}`,
+            `/user/boletin/listar?page=${currentPage - 1}&size=${pageSize}`,
           );
         } else {
           router.refresh();
@@ -112,7 +113,7 @@ export default function ListarBoletinesClient({
   }, [boletinToDelete, boletines.length, currentPage, pageSize, router]);
 
   const handlePageChange = (page: number) => {
-    router.push(`/user/boletines/listar?page=${page}&size=${pageSize}`);
+    router.push(`/user/boletin/listar?page=${page}&size=${pageSize}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -446,38 +447,13 @@ export default function ListarBoletinesClient({
             </div>
 
             {/* Paginación */}
-            {totalPages > 1 && (
-              <div className="mt-4 border-t border-border pt-4">
-                <div className="flex items-center justify-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="size-8 sm:size-9"
-                  >
-                    <ChevronLeft className="size-3 sm:size-4" />
-                  </Button>
-
-                  <span className="text-xs sm:text-sm px-2 sm:px-3">
-                    {currentPage} / {totalPages}
-                  </span>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="size-8 sm:size-9"
-                  >
-                    <ChevronRight className="size-3 sm:size-4" />
-                  </Button>
-                </div>
-                <div className="text-center text-xs text-muted-foreground mt-2">
-                  {total} boletín{total !== 1 ? "es" : ""}
-                </div>
-              </div>
-            )}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={total}
+              itemLabel="boletín"
+              onPageChange={handlePageChange}
+            />
           </div>
         </div>
       </div>

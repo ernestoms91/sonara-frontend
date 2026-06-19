@@ -87,8 +87,6 @@ export async function createCompoundBoletin(
   const cookieStore = await cookies();
   const token = cookieStore.get("access_token")?.value;
 
-  console.log(startTime);
-
   if (!token) {
     return {
       success: false,

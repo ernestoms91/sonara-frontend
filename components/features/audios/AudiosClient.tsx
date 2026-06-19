@@ -13,6 +13,7 @@ import { convertToAudioItem } from "@/lib/audio-utils";
 import { toast } from "sonner";
 import { deleteAudio } from "@/app/actions/audio.actions";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Pagination } from "@/components/common/Pagination";
 
 interface AudiosClientProps {
   initialData: {
@@ -157,37 +158,14 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
           </div>
         </div>
 
-        {/* Paginación simple y moderna */}
-        {totalPages > 1 && (
-          <div className="border-t border-border p-4">
-            <div className="flex items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="size-4" />
-              </Button>
-
-              <span className="text-sm px-3">
-                {currentPage} / {totalPages}
-              </span>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight className="size-4" />
-              </Button>
-            </div>
-            <div className="text-center text-xs text-muted-foreground mt-2">
-              {total} audio{total !== 1 ? "s" : ""}
-            </div>
-          </div>
-        )}
+        {/* Paginación */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={total}
+          itemLabel="audio"
+          onPageChange={handlePageChange}
+        />
       </div>
 
       <ConfirmDialog

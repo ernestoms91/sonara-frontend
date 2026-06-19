@@ -16,5 +16,11 @@ export default async function AudiosPage({ searchParams }: AudiosPageProps) {
     throw new Error(result.error || "Error al cargar audios");
   }
 
-  return <AudiosClient initialData={result.data} currentPage={currentPage} />;
+  return (
+    <AudiosClient
+      initialData={result.data}
+      key={`${currentPage}-${pageSize}`}
+      currentPage={currentPage}
+    />
+  );
 }
