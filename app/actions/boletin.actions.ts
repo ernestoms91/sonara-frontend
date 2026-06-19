@@ -16,7 +16,11 @@ interface ApiResponseError {
 // ============================================
 // GET BOLETINES - Obtener lista de boletines
 // ============================================
-export async function getBoletines(page: number = 1, size: number = 30) {
+export async function getBoletines(
+  page: number = 1,
+  size: number = 30,
+  activeOnly: boolean = true,
+) {
   const cookieStore = await cookies();
   const token = cookieStore.get("access_token")?.value;
 
@@ -30,7 +34,7 @@ export async function getBoletines(page: number = 1, size: number = 30) {
 
   try {
     const response = await fetch(
-      `${BACKEND_URL}/api/v1/audio/all?page=${page}&size=${size}`,
+      `${BACKEND_URL}/api/v1/boletin/all?page=${page}&size=${size}&active_only=${activeOnly}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -41,19 +45,27 @@ export async function getBoletines(page: number = 1, size: number = 30) {
     );
 
     if (!response.ok) {
+      let errorMessage = `Error ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch {
+        const textError = await response.text();
+        if (textError) {
+          errorMessage = textError;
+        }
+      }
+
       return {
         success: false,
-        error: `Error ${response.status}: ${response.statusText}`,
+        error: errorMessage,
         data: null,
       };
     }
 
     const data = await response.json();
-
-    // Log para verificar
-    console.log(
-      `Cargados ${data.data?.items?.length || 0} boletines de ${data.data?.total || 0} totales`,
-    );
 
     return { success: true, error: null, data };
   } catch (error) {
@@ -65,7 +77,6 @@ export async function getBoletines(page: number = 1, size: number = 30) {
     };
   }
 }
-
 // ============================================
 // CREATE COMPOUND BOLETIN - Crear boletín compuesto
 // ============================================

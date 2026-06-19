@@ -1,5 +1,5 @@
-// app/user/boletines/page.tsx
-import { getBoletines } from "@/app/actions/boletin.actions";
+// app/user/boletines/crear/page.tsx
+import { getAudios } from "@/app/actions/audio.actions";
 import { BoletinesClient } from "@/components/features/boletin/BoletinesClient";
 
 interface BoletinesPageProps {
@@ -14,11 +14,13 @@ export default async function BoletinesPage({
   const currentPage = Number(params.page) || 1;
   const pageSize = Number(params.size) || 30;
 
-  const result = await getBoletines(currentPage, pageSize);
+  const result = await getAudios(currentPage, pageSize);
 
   if (!result.success || !result.data) {
     // Manejar el error - puedes redirigir o mostrar un mensaje
-    throw new Error(result.error || "Error al cargar boletines");
+    throw new Error(
+      result.error || "Error al cargar los audios para boletines",
+    );
   }
 
   return (
