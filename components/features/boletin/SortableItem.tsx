@@ -33,7 +33,7 @@ export function SortableItem({ item, index }: SortableItemProps) {
       style={style}
       className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg border hover:bg-muted transition-all"
     >
-      <div className="shrink-0 flex flex-col items-center gap-1 min-w-[48px]">
+      <div className="shrink-0 flex flex-col items-center gap-1 min-w-12">
         <span className="text-sm font-medium text-primary w-8 text-center">
           {index + 1}
         </span>
@@ -44,14 +44,14 @@ export function SortableItem({ item, index }: SortableItemProps) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium break-words whitespace-normal">
+        <p className="text-sm font-medium wrap-break-word whitespace-normal">
           {item.title}
         </p>
-        <p className="text-xs text-muted-foreground mt-1 break-words whitespace-normal">
-          {item.profile_name} • {Math.floor(item.duration / 60)}:
-          {(item.duration % 60).toString().padStart(2, "0")}
+        <p className="text-xs text-primary mt-1 wrap-break-word whitespace-normal">
+          {item.profile_name}{" "}
+          {item.secondary_profile_name && `- ${item.secondary_profile_name}`}
         </p>
-        <p className="text-xs text-muted-foreground/70 mt-2 line-clamp-2 break-words whitespace-normal">
+        <p className="text-xs text-muted-foreground/70 mt-2 line-clamp-2 wrap-break-word whitespace-normal">
           {item.text}
         </p>
       </div>

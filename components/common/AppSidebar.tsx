@@ -1,14 +1,14 @@
+// components/common/AppSidebar.tsx
 "use client";
 
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import type { LucideIcon } from "lucide-react";
 import {
   AudioLines,
-  Mic2,
   Newspaper,
   LogOut,
   ChevronDown,
@@ -29,6 +29,18 @@ import {
   SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 import { ThemeButtonDynamic } from "./theme-button-dynamic";
+import { getCurrentUser } from "@/app/actions/user.actions";
+
+interface UserData {
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
+  is_active: boolean;
+  is_admin: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 interface NavItem {
   title: string;
@@ -45,13 +57,6 @@ interface NavGroup {
   title: string;
   icon: LucideIcon;
   subItems: SubNavItem[];
-}
-
-interface AppSidebarProps {
-  user?: {
-    name: string;
-    plan: string;
-  };
 }
 
 const navItems: NavItem[] = [
@@ -77,19 +82,38 @@ const boletinesGroup: NavGroup = {
   ],
 };
 
-export function AppSidebar({
-  user = {
-    name: "Juan Designer",
-    plan: "Plan Premium",
-  },
-}: AppSidebarProps) {
+export function AppSidebar() {
   const pathname = usePathname();
   const [isBoletinesOpen, setIsBoletinesOpen] = useState(() => {
-    // Abrir automáticamente si alguna subruta está activa
     return pathname.startsWith("/user/boletines");
   });
 
-  const initials = user.name
+  // ✅ Estado para el usuario
+  const [user, setUser] = useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // ✅ Cargar el usuario al montar el componente
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUser();
+  }, []);
+
+  // ✅ Datos del usuario para mostrar
+  const displayName = user?.full_name || user?.username || "Usuario";
+  const displayPlan = user?.is_admin ? "Administrador" : "Plan Gratuito";
+
+  // Iniciales del nombre
+  const initials = displayName
     .split(" ")
     .map((word) => word[0])
     .join("")
@@ -131,7 +155,6 @@ export function AppSidebar({
 
       <SidebarContent className="py-4 lg:py-6">
         <SidebarMenu className="space-y-1 lg:space-y-2">
-          {/* Items normales */}
           {navItems.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
@@ -151,7 +174,6 @@ export function AppSidebar({
             </SidebarMenuItem>
           ))}
 
-          {/* Grupo desplegable de Boletines */}
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => setIsBoletinesOpen(!isBoletinesOpen)}
@@ -195,15 +217,15 @@ export function AppSidebar({
       <SidebarFooter className="border-t border-border p-4 lg:p-5">
         <div className="flex items-center gap-3 overflow-hidden lg:gap-4">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary lg:size-10 lg:text-sm">
-            {initials}
+            {isLoading ? "..." : initials}
           </div>
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-foreground lg:text-base">
-              {user.name}
+              {isLoading ? "Cargando..." : displayName}
             </p>
             <p className="truncate text-xs text-muted-foreground lg:text-sm">
-              {user.plan}
+              {isLoading ? "..." : displayPlan}
             </p>
           </div>
 

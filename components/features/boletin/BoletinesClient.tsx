@@ -176,7 +176,10 @@ export function BoletinesClient({
       toast.success(`Boletín creado con ${orderedIds.length} audios`);
       setSelectedBoletines(new Set());
       setShowOrderModal(false);
-      router.refresh();
+      setTimeout(() => {
+        window.location.href =
+          "/user/boletin/listar?page=1&size=10&active_only=true";
+      }, 900);
     } else {
       toast.error(result.error);
     }

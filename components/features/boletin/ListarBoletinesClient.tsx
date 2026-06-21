@@ -1,27 +1,28 @@
 // components/features/boletin/ListarBoletinesClient.tsx
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ChevronLeft,
   ChevronRight,
   FileText,
   Calendar,
   Clock,
   User,
   Edit,
-  Copy,
   Trash2,
   MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { getBoletines } from "@/app/actions/boletin.actions";
+import {
+  updateBoletin,
+  getBoletinById,
+  deleteBoletin,
+} from "@/app/actions/boletin.actions";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   DropdownMenu,
@@ -30,6 +31,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Pagination } from "@/components/common/Pagination";
+import { EditarBoletinesModal } from "./EditarBoletinesModal";
+import { VerBoletinModal } from "./VerBoletinModal";
+import { AudioFromAPI } from "@/types/audio";
 
 interface BoletinFromAPI {
   id: number;
@@ -40,6 +44,7 @@ interface BoletinFromAPI {
   active: boolean;
   audio_count: number;
   audio_ids: string[];
+  audios?: AudioFromAPI[];
 }
 
 interface ListarBoletinesClientProps {
@@ -62,13 +67,42 @@ export default function ListarBoletinesClient({
   currentPage,
 }: ListarBoletinesClientProps) {
   const router = useRouter();
-  const [boletines] = useState(initialData.data?.items || []);
+  const [boletines, setBoletines] = useState(initialData.data?.items || []);
   const [isPending, startTransition] = useTransition();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [boletinToDelete, setBoletinToDelete] = useState<{
     id: number;
     name: string;
   } | null>(null);
+
+  // Estados para edición
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingBoletin, setEditingBoletin] = useState<{
+    id: number;
+    audios: AudioFromAPI[];
+    start_time: string;
+  } | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoadingAudios, setIsLoadingAudios] = useState(false);
+  // Cache de audios por boletín para no recargar
+  const [audiosCache, setAudiosCache] = useState<Map<number, AudioFromAPI[]>>(
+    new Map(),
+  );
+
+  // Estados para ver detalles
+  const [verModalOpen, setVerModalOpen] = useState(false);
+  const [boletinDetail, setBoletinDetail] = useState<{
+    id: number;
+    start_time: string;
+    created_by: string;
+    created_at: string;
+    updated_at: string;
+    active: boolean;
+    audio_count: number;
+    audio_ids: string[];
+    audios: AudioFromAPI[];
+  } | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   const {
     total,
@@ -93,15 +127,13 @@ export default function ListarBoletinesClient({
 
     startTransition(async () => {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        toast.success("Boletín eliminado correctamente");
+        const result = await deleteBoletin(boletinToDelete.id);
 
-        if (boletines.length === 1 && currentPage > 1) {
-          router.push(
-            `/user/boletin/listar?page=${currentPage - 1}&size=${pageSize}`,
-          );
+        if (result.success) {
+          toast.success("Boletín eliminado correctamente");
+          window.location.href = `/user/boletin/listar?page=1&size=${pageSize}&active_only=true`;
         } else {
-          router.refresh();
+          toast.error(result.error || "Error al eliminar el boletín");
         }
       } catch (error) {
         toast.error("Error al eliminar el boletín");
@@ -110,12 +142,180 @@ export default function ListarBoletinesClient({
       setDeleteDialogOpen(false);
       setBoletinToDelete(null);
     });
-  }, [boletinToDelete, boletines.length, currentPage, pageSize, router]);
+  }, [boletinToDelete, pageSize]);
 
   const handlePageChange = (page: number) => {
     router.push(`/user/boletin/listar?page=${page}&size=${pageSize}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Función para abrir el modal de ver detalles
+  const handleVerClick = useCallback(
+    async (boletin: BoletinFromAPI) => {
+      if (isLoadingDetail) return;
+
+      // Si ya tenemos los audios en caché o en el objeto, usarlos
+      if (boletin.audios && boletin.audios.length > 0) {
+        setBoletinDetail({
+          id: boletin.id,
+          start_time: boletin.start_time,
+          created_by: boletin.created_by,
+          created_at: boletin.created_at,
+          updated_at: boletin.updated_at,
+          active: boletin.active,
+          audio_count: boletin.audio_count,
+          audio_ids: boletin.audio_ids,
+          audios: boletin.audios,
+        });
+        setVerModalOpen(true);
+        return;
+      }
+
+      // Si no tiene audios, intentar cargarlos
+      setIsLoadingDetail(true);
+      const loadingToast = toast.loading("Cargando detalles...");
+
+      try {
+        const result = await getBoletinById(boletin.id);
+
+        if (!result.success || !result.data) {
+          toast.error(result.error || "Error al cargar los detalles");
+          toast.dismiss(loadingToast);
+          return;
+        }
+
+        const boletinCompleto = result.data.data;
+
+        if (!boletinCompleto.audios || boletinCompleto.audios.length === 0) {
+          toast.error("Este boletín no tiene audios");
+          toast.dismiss(loadingToast);
+          return;
+        }
+
+        // Guardar en caché
+        setAudiosCache((prev) =>
+          new Map(prev).set(boletin.id, boletinCompleto.audios),
+        );
+
+        setBoletinDetail({
+          id: boletinCompleto.id,
+          start_time: boletinCompleto.start_time,
+          created_by: boletinCompleto.created_by,
+          created_at: boletinCompleto.created_at,
+          updated_at: boletinCompleto.updated_at,
+          active: boletinCompleto.active,
+          audio_count: boletinCompleto.audio_count,
+          audio_ids: boletinCompleto.audio_ids,
+          audios: boletinCompleto.audios,
+        });
+        setVerModalOpen(true);
+        toast.dismiss(loadingToast);
+      } catch (error) {
+        toast.error("Error al cargar los detalles");
+        toast.dismiss(loadingToast);
+        console.error(error);
+      } finally {
+        setIsLoadingDetail(false);
+      }
+    },
+    [isLoadingDetail, audiosCache],
+  );
+
+  // Función para abrir el modal de edición
+  const handleEditClick = useCallback(
+    async (boletin: BoletinFromAPI) => {
+      if (isLoadingAudios) return;
+
+      if (!boletin.audio_ids || boletin.audio_ids.length === 0) {
+        toast.error("Este boletín no tiene audios para editar");
+        return;
+      }
+
+      // Si ya tenemos los audios en caché, usarlos
+      if (audiosCache.has(boletin.id)) {
+        const cachedAudios = audiosCache.get(boletin.id)!;
+        setEditingBoletin({
+          id: boletin.id,
+          audios: cachedAudios,
+          start_time: boletin.start_time,
+        });
+        setEditModalOpen(true);
+        return;
+      }
+
+      setIsLoadingAudios(true);
+      const loadingToast = toast.loading("Cargando audios...");
+
+      try {
+        const result = await getBoletinById(boletin.id);
+
+        if (!result.success || !result.data) {
+          toast.error(result.error || "Error al cargar los audios");
+          toast.dismiss(loadingToast);
+          return;
+        }
+
+        const boletinCompleto = result.data.data;
+
+        if (!boletinCompleto.audios || boletinCompleto.audios.length === 0) {
+          toast.error("Este boletín no tiene audios para editar");
+          toast.dismiss(loadingToast);
+          return;
+        }
+
+        setAudiosCache((prev) =>
+          new Map(prev).set(boletin.id, boletinCompleto.audios),
+        );
+
+        setEditingBoletin({
+          id: boletinCompleto.id,
+          audios: boletinCompleto.audios,
+          start_time: boletinCompleto.start_time,
+        });
+        setEditModalOpen(true);
+        toast.dismiss(loadingToast);
+        toast.success(`${boletinCompleto.audios.length} audios cargados`);
+      } catch (error) {
+        toast.error("Error al cargar los audios");
+        toast.dismiss(loadingToast);
+        console.error(error);
+      } finally {
+        setIsLoadingAudios(false);
+      }
+    },
+    [isLoadingAudios, audiosCache],
+  );
+
+  // Función para confirmar la edición
+  const handleEditConfirm = useCallback(
+    async (orderedIds: string[], startTime: string) => {
+      if (!editingBoletin) return;
+
+      setIsEditing(true);
+      try {
+        const result = await updateBoletin(
+          editingBoletin.id,
+          orderedIds,
+          startTime,
+        );
+
+        if (result.success) {
+          toast.success("Boletín actualizado correctamente");
+          setEditModalOpen(false);
+          setEditingBoletin(null);
+
+          window.location.href = `/user/boletin/listar?page=1&size=${pageSize}&active_only=true`;
+        } else {
+          toast.error(result.error || "Error al actualizar el boletín");
+        }
+      } catch (error) {
+        toast.error("Error al actualizar el boletín");
+      } finally {
+        setIsEditing(false);
+      }
+    },
+    [editingBoletin, pageSize],
+  );
 
   const formatDate = (dateStr: string) => {
     try {
@@ -162,7 +362,7 @@ export default function ListarBoletinesClient({
           <FileText className="size-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">No tienes boletines aún</p>
           <Button asChild>
-            <Link href="/user/boletines/crear">Crear primer boletín</Link>
+            <Link href="/user/boletin/crear">Crear primer boletín</Link>
           </Button>
         </div>
       </div>
@@ -180,7 +380,7 @@ export default function ListarBoletinesClient({
             </h1>
 
             <Button asChild size="sm" className="gap-1 text-xs sm:text-sm">
-              <Link href="/user/boletines/crear">
+              <Link href="/user/boletin/crear">
                 <FileText className="size-3 sm:size-4" />
                 <span className="hidden sm:inline">Nuevo Boletín</span>
                 <span className="sm:hidden">Nuevo</span>
@@ -263,13 +463,14 @@ export default function ListarBoletinesClient({
                               size="icon"
                               className="size-8 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-all"
                               title="Editar"
-                              asChild
+                              onClick={() => handleEditClick(boletin)}
+                              disabled={isLoadingAudios}
                             >
-                              <Link
-                                href={`/user/boletines/${boletin.id}/editar`}
-                              >
+                              {isLoadingAudios ? (
+                                <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                              ) : (
                                 <Edit className="size-4" />
-                              </Link>
+                              )}
                             </Button>
                             <Button
                               variant="ghost"
@@ -290,11 +491,14 @@ export default function ListarBoletinesClient({
                               size="icon"
                               className="size-8 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-all"
                               title="Ver detalles"
-                              asChild
+                              onClick={() => handleVerClick(boletin)}
+                              disabled={isLoadingDetail}
                             >
-                              <Link href={`/user/boletines/${boletin.id}`}>
+                              {isLoadingDetail ? (
+                                <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                              ) : (
                                 <ChevronRight className="size-4" />
-                              </Link>
+                              )}
                             </Button>
                           </div>
                         </td>
@@ -333,11 +537,14 @@ export default function ListarBoletinesClient({
                         size="icon"
                         className="size-7 sm:size-8 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-all"
                         title="Editar"
-                        asChild
+                        onClick={() => handleEditClick(boletin)}
+                        disabled={isLoadingAudios}
                       >
-                        <Link href={`/user/boletines/${boletin.id}/editar`}>
+                        {isLoadingAudios ? (
+                          <div className="size-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        ) : (
                           <Edit className="size-3.5 sm:size-4" />
-                        </Link>
+                        )}
                       </Button>
                       <Button
                         variant="ghost"
@@ -358,11 +565,14 @@ export default function ListarBoletinesClient({
                         size="icon"
                         className="size-7 sm:size-8 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-all"
                         title="Ver detalles"
-                        asChild
+                        onClick={() => handleVerClick(boletin)}
+                        disabled={isLoadingDetail}
                       >
-                        <Link href={`/user/boletines/${boletin.id}`}>
+                        {isLoadingDetail ? (
+                          <div className="size-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        ) : (
                           <ChevronRight className="size-3.5 sm:size-4" />
-                        </Link>
+                        )}
                       </Button>
                     </div>
 
@@ -379,23 +589,17 @@ export default function ListarBoletinesClient({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem asChild>
-                            <Link
-                              href={`/user/boletines/${boletin.id}`}
-                              className="flex items-center gap-2 cursor-pointer"
-                            >
-                              <ChevronRight className="size-4" />
-                              Ver detalles
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link
-                              href={`/user/boletines/${boletin.id}/editar`}
-                              className="flex items-center gap-2 cursor-pointer"
-                            >
+                          <DropdownMenuItem
+                            onClick={() => handleEditClick(boletin)}
+                            className="flex items-center gap-2 cursor-pointer"
+                            disabled={isLoadingAudios}
+                          >
+                            {isLoadingAudios ? (
+                              <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            ) : (
                               <Edit className="size-4" />
-                              Editar
-                            </Link>
+                            )}
+                            Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() =>
@@ -409,12 +613,24 @@ export default function ListarBoletinesClient({
                             <Trash2 className="size-4" />
                             Eliminar
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleVerClick(boletin)}
+                            className="flex items-center gap-2 cursor-pointer"
+                            disabled={isLoadingDetail}
+                          >
+                            {isLoadingDetail ? (
+                              <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            ) : (
+                              <ChevronRight className="size-4" />
+                            )}
+                            Ver detalles
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                   </div>
 
-                  {/* Cuerpo: fecha y hora con AM/PM - HORA CON COLOR PRIMARY */}
+                  {/* Cuerpo: fecha y hora con AM/PM */}
                   <div className="mt-2 sm:mt-3 grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2">
                     <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
                       <Calendar className="size-3 sm:size-3.5 shrink-0" />
@@ -457,6 +673,38 @@ export default function ListarBoletinesClient({
           </div>
         </div>
       </div>
+
+      {/* Modal de edición */}
+      {editingBoletin && (
+        <EditarBoletinesModal
+          key={`edit-${editingBoletin.id}`}
+          open={editModalOpen}
+          onOpenChange={(open: boolean) => {
+            if (!open) {
+              setEditingBoletin(null);
+            }
+            setEditModalOpen(open);
+          }}
+          selectedBoletines={editingBoletin.audios}
+          currentStartTime={editingBoletin.start_time}
+          boletinId={editingBoletin.id}
+          onConfirm={handleEditConfirm}
+        />
+      )}
+
+      {/* Modal de ver detalles */}
+      {boletinDetail && (
+        <VerBoletinModal
+          open={verModalOpen}
+          onOpenChange={(open: boolean) => {
+            if (!open) {
+              setBoletinDetail(null);
+            }
+            setVerModalOpen(open);
+          }}
+          boletin={boletinDetail}
+        />
+      )}
 
       <ConfirmDialog
         open={deleteDialogOpen}
