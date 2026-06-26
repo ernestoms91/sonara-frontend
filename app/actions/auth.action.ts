@@ -1,9 +1,10 @@
+// app/actions/auth.actions.ts
 "use server";
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { cookies } from "next/headers";
-import type { LoginResponse } from "@/types/api";
+import { fetchWithoutAuth } from "@/lib/fetch-utils";
 
 type LoginState = {
   errors?: Record<string, { message: string }[]>;
@@ -17,6 +18,9 @@ const loginSchema = z.object({
   password: z.string().min(1, "La contraseña es requerida"),
 });
 
+// ============================================
+// LOGIN - Iniciar sesión (SIN autenticación)
+// ============================================
 export async function loginAction(prevState: LoginState, formData: FormData) {
   // 1. Validar los datos
   const validated = loginSchema.safeParse({
@@ -38,47 +42,38 @@ export async function loginAction(prevState: LoginState, formData: FormData) {
     return { errors };
   }
 
-  // 2. Llamar a FastAPI
-  const BACKEND_URL = process.env.BACKEND_URL;
+  // 2. Llamar a FastAPI usando fetchWithoutAuth
+  const result = await fetchWithoutAuth<{
+    access_token: string;
+    token_type: string;
+    user: {
+      id: number;
+      username: string;
+      email: string;
+    };
+  }>("/api/v1/auth/login", {
+    method: "POST",
+    body: JSON.stringify({
+      username: validated.data.username,
+      password: validated.data.password,
+    }),
+  });
 
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username: validated.data.username,
-        password: validated.data.password,
-      }),
-    });
-
-    const result: LoginResponse = await response.json();
-
-    if (!response.ok) {
-      return { error: result.message || "Credenciales incorrectas" };
-    }
-
-    //  Usar result.data.access_token (no data.access_token)
-    const token = result.data.access_token;
-
-    // 3. Guardar el token en cookie
-    const cookieStore = await cookies();
-    cookieStore.set("access_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: Number(process.env.JWT_EXPIRES_MIN) * 60,
-      path: "/",
-    });
-
-    //  No hacer return, solo salir del try
-    // El redirect va FUERA del try/catch
-  } catch (error) {
-    console.error("Error de red:", error);
-    return { error: "Error de conexión con el servidor" };
+  // 3. Manejar errores
+  if (!result.success || !result.data) {
+    return { error: result.error || "Credenciales incorrectas" };
   }
 
-  // 4. Redirigir
+  // 4. Guardar el token en cookie
+  const cookieStore = await cookies();
+  cookieStore.set("access_token", result.data.access_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: Number(process.env.JWT_EXPIRES_MIN) * 60,
+    path: "/",
+  });
+
+  // 5. Redirigir
   redirect("/user/audios");
 }

@@ -1,7 +1,7 @@
 // components/features/boletin/ListarBoletinesClient.tsx
 "use client";
 
-import { useState, useTransition, useCallback, useEffect } from "react";
+import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronRight,
@@ -33,31 +33,13 @@ import {
 import { Pagination } from "@/components/common/Pagination";
 import { EditarBoletinesModal } from "./EditarBoletinesModal";
 import { VerBoletinModal } from "./VerBoletinModal";
-import { AudioFromAPI } from "@/types/audio";
-
-interface BoletinFromAPI {
-  id: number;
-  start_time: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  active: boolean;
-  audio_count: number;
-  audio_ids: string[];
-  audios?: AudioFromAPI[];
-}
+import { AudioFromAPI, BoletinFromAPI, BoletinListData } from "@/types/api";
 
 interface ListarBoletinesClientProps {
   initialData: {
     success: boolean;
     error?: string;
-    data?: {
-      items: BoletinFromAPI[];
-      total: number;
-      page: number;
-      size: number;
-      pages: number;
-    };
+    data?: BoletinListData;
   };
   currentPage: number;
 }
@@ -131,7 +113,23 @@ export default function ListarBoletinesClient({
 
         if (result.success) {
           toast.success("Boletín eliminado correctamente");
-          window.location.href = `/user/boletin/listar?page=1&size=${pageSize}&active_only=true`;
+
+          // Eliminar del estado local
+          setBoletines((prev) =>
+            prev.filter((b) => b.id !== boletinToDelete.id),
+          );
+          setAudiosCache((prev) => {
+            const newCache = new Map(prev);
+            newCache.delete(boletinToDelete.id);
+            return newCache;
+          });
+
+          // Si no hay más boletines y estamos en página > 1
+          if (boletines.length === 1 && currentPage > 1) {
+            router.push(
+              `/user/boletin/listar?page=${currentPage - 1}&size=${pageSize}`,
+            );
+          }
         } else {
           toast.error(result.error || "Error al eliminar el boletín");
         }
@@ -142,10 +140,11 @@ export default function ListarBoletinesClient({
       setDeleteDialogOpen(false);
       setBoletinToDelete(null);
     });
-  }, [boletinToDelete, pageSize]);
+  }, [boletinToDelete, pageSize, boletines.length, currentPage, router]);
 
   const handlePageChange = (page: number) => {
     router.push(`/user/boletin/listar?page=${page}&size=${pageSize}`);
+    router.refresh();
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -184,7 +183,7 @@ export default function ListarBoletinesClient({
           return;
         }
 
-        const boletinCompleto = result.data.data;
+        const boletinCompleto = result.data;
 
         if (!boletinCompleto.audios || boletinCompleto.audios.length === 0) {
           toast.error("Este boletín no tiene audios");
@@ -255,7 +254,7 @@ export default function ListarBoletinesClient({
           return;
         }
 
-        const boletinCompleto = result.data.data;
+        const boletinCompleto = result.data;
 
         if (!boletinCompleto.audios || boletinCompleto.audios.length === 0) {
           toast.error("Este boletín no tiene audios para editar");
@@ -301,10 +300,16 @@ export default function ListarBoletinesClient({
 
         if (result.success) {
           toast.success("Boletín actualizado correctamente");
+
+          // Actualizar el boletín en el estado local
+          setBoletines((prev) =>
+            prev.map((b) =>
+              b.id === editingBoletin.id ? { ...b, start_time: startTime } : b,
+            ),
+          );
+
           setEditModalOpen(false);
           setEditingBoletin(null);
-
-          window.location.href = `/user/boletin/listar?page=1&size=${pageSize}&active_only=true`;
         } else {
           toast.error(result.error || "Error al actualizar el boletín");
         }
@@ -314,7 +319,7 @@ export default function ListarBoletinesClient({
         setIsEditing(false);
       }
     },
-    [editingBoletin, pageSize],
+    [editingBoletin],
   );
 
   const formatDate = (dateStr: string) => {

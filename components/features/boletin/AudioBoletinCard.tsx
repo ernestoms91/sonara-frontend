@@ -1,7 +1,7 @@
-// components/features/boletines/BoletinCard.tsx
+// components/features/boletin/AudioBoletinCard.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   User,
   Clock,
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AudioFromAPI } from "@/types/audio";
+import { AudioFromAPI } from "@/types/api";
 
 // Formatear duración
 const formatDuration = (seconds: number): string => {
@@ -34,12 +34,12 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
-// Componente de audio - botón y barra centrados verticalmente
-function AudioPlayer({ url }: { url: string; title: string }) {
+// Componente de audio
+function AudioPlayer({ url, title }: { url: string; title: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -52,7 +52,7 @@ function AudioPlayer({ url }: { url: string; title: string }) {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const audio = new Audio(url);
     audioRef.current = audio;
 
@@ -103,7 +103,7 @@ function AudioPlayer({ url }: { url: string; title: string }) {
   );
 }
 
-// Función para formatear el texto
+// Formatear texto
 function formatBoletinText(text: string, isExpanded: boolean): React.ReactNode {
   if (!isExpanded) {
     const truncated = text.length > 150 ? text.substring(0, 150) + "..." : text;
@@ -137,19 +137,19 @@ function formatBoletinText(text: string, isExpanded: boolean): React.ReactNode {
   );
 }
 
-interface BoletinCardProps {
-  boletin: AudioFromAPI;
+interface AudioBoletinCardProps {
+  audio: AudioFromAPI;
   isSelected: boolean;
   onToggleSelect: (id: number) => void;
 }
 
 export function AudioBoletinCard({
-  boletin,
+  audio,
   isSelected,
   onToggleSelect,
-}: BoletinCardProps) {
+}: AudioBoletinCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const shouldTruncate = boletin.text.length > 150;
+  const shouldTruncate = audio.text.length > 150;
 
   return (
     <Card
@@ -165,12 +165,12 @@ export function AudioBoletinCard({
         <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
           <Checkbox
             checked={isSelected}
-            onCheckedChange={() => onToggleSelect(boletin.id)}
+            onCheckedChange={() => onToggleSelect(audio.id)}
             className="mt-1 shrink-0 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
           />
           <div className="flex-1 min-w-0">
             <CardTitle className="text-sm sm:text-base md:text-lg line-clamp-2 group-hover:text-primary transition-colors">
-              {boletin.title}
+              {audio.title || "Sin título"}
             </CardTitle>
             <div className="flex flex-wrap gap-1 mt-1.5 sm:mt-2">
               <Badge
@@ -179,17 +179,17 @@ export function AudioBoletinCard({
               >
                 <User className="size-2.5 sm:size-3 mr-0.5 sm:mr-1" />
                 <span className="truncate max-w-20 sm:max-w-none">
-                  {boletin.profile_name}
+                  {audio.profile_name || "Desconocida"}
                 </span>
               </Badge>
-              {boletin.secondary_profile_name && (
+              {audio.secondary_profile_name && (
                 <Badge
                   variant="secondary"
                   className="text-[10px] sm:text-xs bg-primary/10 text-primary hover:bg-primary/20 px-1.5 py-0 sm:px-2"
                 >
                   <User className="size-2.5 sm:size-3 mr-0.5 sm:mr-1" />
                   <span className="truncate max-w-20 sm:max-w-none">
-                    {boletin.secondary_profile_name}
+                    {audio.secondary_profile_name}
                   </span>
                 </Badge>
               )}
@@ -199,7 +199,7 @@ export function AudioBoletinCard({
               >
                 <Clock className="size-2.5 sm:size-3 mr-0.5 sm:mr-1" />
                 <span className="whitespace-nowrap">
-                  {formatDuration(boletin.duration)}
+                  {formatDuration(audio.duration)}
                 </span>
               </Badge>
               <Badge
@@ -207,7 +207,7 @@ export function AudioBoletinCard({
                 className="text-[10px] sm:text-xs border-primary/30 text-foreground/70 px-1.5 py-0 sm:px-2 hidden sm:flex"
               >
                 <Calendar className="size-3 mr-1" />
-                {formatDate(boletin.created_at)}
+                {formatDate(audio.created_at)}
               </Badge>
             </div>
           </div>
@@ -217,7 +217,7 @@ export function AudioBoletinCard({
       <CardContent className="px-3 pb-3 sm:px-4 sm:pb-4">
         {/* Texto */}
         <div className="mb-3 sm:mb-4">
-          {formatBoletinText(boletin.text, isExpanded)}
+          {formatBoletinText(audio.text, isExpanded)}
 
           {shouldTruncate && (
             <button
@@ -239,16 +239,17 @@ export function AudioBoletinCard({
           )}
         </div>
 
-        {/* Fecha móvil + Reproductor centrado */}
+        {/* Fecha móvil + Reproductor */}
         <div className="pt-2 border-t border-border/50">
-          {/* Fecha - solo móvil */}
           <div className="flex items-center gap-1 text-[10px] text-muted-foreground sm:hidden mb-2">
             <Calendar className="size-2.5" />
-            <span>{formatDate(boletin.created_at)}</span>
+            <span>{formatDate(audio.created_at)}</span>
           </div>
 
-          {/* Reproductor con barra centrada respecto al botón */}
-          <AudioPlayer url={boletin.audio_url} title={boletin.title} />
+          <AudioPlayer
+            url={audio.audio_url || ""}
+            title={audio.title || "Audio"}
+          />
         </div>
       </CardContent>
     </Card>

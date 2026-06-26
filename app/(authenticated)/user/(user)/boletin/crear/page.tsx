@@ -1,15 +1,14 @@
 // app/user/boletines/crear/page.tsx
 import { getAudios } from "@/app/actions/audio.actions";
-import { BoletinesClient } from "@/components/features/boletin/BoletinesClient";
+import { SeleccionarAudiosBoletinClient } from "@/components/features/boletin/SeleccionarAudiosBoletinClient";
 
-interface BoletinesPageProps {
+interface SeleccionarAudiosPageProps {
   searchParams: Promise<{ page?: string; size?: string }>;
 }
 
-export default async function BoletinesPage({
+export default async function SeleccionarAudiosPage({
   searchParams,
-}: BoletinesPageProps) {
-  // await new Promise((resolve) => setTimeout(resolve, 2000));
+}: SeleccionarAudiosPageProps) {
   const params = await searchParams;
   const currentPage = Number(params.page) || 1;
   const pageSize = Number(params.size) || 30;
@@ -17,13 +16,21 @@ export default async function BoletinesPage({
   const result = await getAudios(currentPage, pageSize);
 
   if (!result.success || !result.data) {
-    // Manejar el error - puedes redirigir o mostrar un mensaje
     throw new Error(
-      result.error || "Error al cargar los audios para boletines",
+      result.error || "Error al cargar los audios para el boletín",
     );
   }
 
+  // CORRECCIÓN: Envolver en la estructura esperada
+  const initialData = {
+    ok: result.success,
+    data: result.data, // { items, total, page, size, pages }
+  };
+
   return (
-    <BoletinesClient initialData={result.data} currentPage={currentPage} />
+    <SeleccionarAudiosBoletinClient
+      initialData={initialData}
+      currentPage={currentPage}
+    />
   );
 }

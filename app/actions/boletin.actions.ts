@@ -1,17 +1,14 @@
 // app/actions/boletin.actions.ts
 "use server";
 
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-
-const BACKEND_URL = process.env.BACKEND_URL;
-
-interface ApiResponseError {
-  ok: boolean;
-  message: string;
-  data: null;
-  timestamp: string;
-}
+import { fetchWithAuth } from "@/lib/fetch-utils";
+import {
+  ActionResponse,
+  BoletinFromAPI,
+  CreateBoletinRequest,
+  UpdateBoletinRequest,
+} from "@/types/api";
 
 // ============================================
 // GET BOLETINES - Obtener lista de boletines
@@ -20,119 +17,90 @@ export async function getBoletines(
   page: number = 1,
   size: number = 30,
   activeOnly: boolean = true,
-) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
-
-  if (!token) {
-    return {
-      success: false,
-      error: "No autorizado. Inicia sesión primero.",
-      data: null,
-    };
-  }
-
-  try {
-    const response = await fetch(
-      `${BACKEND_URL}/api/v1/boletin/all?page=${page}&size=${size}&active_only=${activeOnly}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      },
-    );
-
-    if (!response.ok) {
-      let errorMessage = `Error ${response.status}: ${response.statusText}`;
-      try {
-        const errorData = await response.json();
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        }
-      } catch {
-        const textError = await response.text();
-        if (textError) {
-          errorMessage = textError;
-        }
-      }
-
-      return {
-        success: false,
-        error: errorMessage,
-        data: null,
-      };
-    }
-
-    const data = await response.json();
-
-    return { success: true, error: null, data };
-  } catch (error) {
-    console.error("Error en getBoletines:", error);
-    return {
-      success: false,
-      error: "Error de conexión con el servidor",
-      data: null,
-    };
-  }
+): Promise<
+  ActionResponse<{
+    items: BoletinFromAPI[];
+    total: number;
+    page: number;
+    size: number;
+    pages: number;
+  }>
+> {
+  return fetchWithAuth<{
+    items: BoletinFromAPI[];
+    total: number;
+    page: number;
+    size: number;
+    pages: number;
+  }>(`/api/v1/boletin/all?page=${page}&size=${size}&active_only=${activeOnly}`);
 }
 
 // ============================================
 // GET BOLETIN BY ID - Obtener un boletín por ID
 // ============================================
-export async function getBoletinById(boletinId: number) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
+export async function getBoletinById(boletinId: number): Promise<
+  ActionResponse<{
+    id: number;
+    start_time: string;
+    created_by: string;
+    created_at: string;
+    updated_at: string;
+    active: boolean;
+    audio_count: number;
+    audio_ids: string[];
+    audios: string[];
+  }>
+> {
+  return fetchWithAuth<{
+    id: number;
+    start_time: string;
+    created_by: string;
+    created_at: string;
+    updated_at: string;
+    active: boolean;
+    audio_count: number;
+    audio_ids: string[];
+    audios: string[];
+  }>(`/api/v1/boletin/${boletinId}`);
+}
 
-  if (!token) {
+// ============================================
+// CREATE BOLETIN - Crear un nuevo boletín
+// ============================================
+export async function createBoletin(
+  orderedIds: string[],
+  startTime: string,
+): Promise<ActionResponse> {
+  // Validaciones
+  if (orderedIds.length !== 30) {
     return {
       success: false,
-      error: "No autorizado. Inicia sesión primero.",
-      data: null,
+      error: `Debes seleccionar exactamente 30 audios. Tienes ${orderedIds.length}`,
     };
   }
 
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/v1/boletin/${boletinId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      let errorMessage = `Error ${response.status}: ${response.statusText}`;
-      try {
-        const errorData = await response.json();
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        }
-      } catch {
-        const textError = await response.text();
-        if (textError) {
-          errorMessage = textError;
-        }
-      }
-
-      return {
-        success: false,
-        error: errorMessage,
-        data: null,
-      };
-    }
-
-    const data = await response.json();
-    return { success: true, error: null, data };
-  } catch (error) {
-    console.error("Error en getBoletinById:", error);
+  if (!startTime) {
     return {
       success: false,
-      error: "Error de conexión con el servidor",
-      data: null,
+      error: "Debes seleccionar una fecha y hora",
     };
   }
+
+  const body: CreateBoletinRequest = {
+    start_time: startTime,
+    audio_ids: orderedIds,
+  };
+
+  const result = await fetchWithAuth("/api/v1/boletin/new", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+  if (result.success) {
+    revalidatePath("/user/boletines");
+  }
+
+  return result;
 }
 
 // ============================================
@@ -142,18 +110,9 @@ export async function updateBoletin(
   boletinId: number,
   audioIds: string[],
   startTime: string,
-) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
-
-  if (!token) {
-    return {
-      success: false,
-      error: "No autorizado. Inicia sesión nuevamente.",
-    };
-  }
-
-  if (!audioIds || audioIds.length !== 30) {
+): Promise<ActionResponse> {
+  // Validaciones
+  if (audioIds.length !== 30) {
     return {
       success: false,
       error: `Debes tener exactamente 30 audios. Tienes ${audioIds.length}`,
@@ -163,167 +122,51 @@ export async function updateBoletin(
   if (!startTime) {
     return {
       success: false,
-      error: "start_time es obligatorio para actualizar el boletín",
+      error: "start_time es obligatorio",
     };
   }
 
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/v1/boletin/${boletinId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        audio_ids: audioIds,
-        start_time: startTime,
-      }),
-    });
+  const body: UpdateBoletinRequest = {
+    audio_ids: audioIds,
+    start_time: startTime,
+  };
 
-    let errorMessage = `Error ${response.status}`;
+  const result = await fetchWithAuth(`/api/v1/boletin/${boletinId}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
 
-    try {
-      const data: ApiResponseError = await response.json();
-
-      if (!response.ok || !data.ok) {
-        errorMessage = data.message || errorMessage;
-      }
-    } catch {
-      const textError = await response.text();
-      if (textError) {
-        errorMessage = textError;
-      }
-    }
-
-    if (!response.ok) {
-      return { success: false, error: errorMessage };
-    }
-
-    revalidatePath("/user/boletin/listar");
-
-    return { success: true, error: null };
-  } catch (error) {
-    console.error("Error en updateBoletin:", error);
-    return { success: false, error: "Error de conexión con el servidor" };
+  if (result.success) {
+    revalidatePath("/user/boletines");
+    revalidatePath(`/user/boletines/${boletinId}`);
   }
+
+  return result;
 }
 
 // ============================================
-// DELETE BOLETIN - Eliminar un boletín (soft delete)
+// DELETE BOLETIN - Eliminar un boletín
 // ============================================
-export async function deleteBoletin(boletinId: number) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
+export async function deleteBoletin(
+  boletinId: number,
+): Promise<ActionResponse> {
+  const result = await fetchWithAuth(`/api/v1/boletin/${boletinId}`, {
+    method: "DELETE",
+  });
 
-  if (!token) {
-    return {
-      success: false,
-      error: "No autorizado. Inicia sesión nuevamente.",
-    };
+  if (result.success) {
+    revalidatePath("/user/boletines");
   }
 
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/v1/boletin/${boletinId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    let errorMessage = `Error ${response.status}`;
-
-    try {
-      const data: ApiResponseError = await response.json();
-
-      if (!response.ok || !data.ok) {
-        errorMessage = data.message || errorMessage;
-      }
-    } catch {
-      const textError = await response.text();
-      if (textError) {
-        errorMessage = textError;
-      }
-    }
-
-    if (!response.ok) {
-      return { success: false, error: errorMessage };
-    }
-
-    revalidatePath("/user/boletin/listar");
-
-    return { success: true, error: null };
-  } catch (error) {
-    console.error("Error en deleteBoletin:", error);
-    return { success: false, error: "Error de conexión con el servidor" };
-  }
+  return result;
 }
 
 // ============================================
-// CREATE COMPOUND BOLETIN - Crear boletín compuesto
+// CREATE COMPOUND BOLETIN - Crear boletín compuesto (alias de createBoletin)
 // ============================================
 export async function createCompoundBoletin(
   orderedIds: string[],
   startTime: string,
-) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
-
-  if (!token) {
-    return {
-      success: false,
-      error: "No autorizado. Inicia sesión nuevamente.",
-    };
-  }
-
-  if (!orderedIds || orderedIds.length !== 30) {
-    return {
-      success: false,
-      error: `Debes seleccionar exactamente 30 audios. Tienes ${orderedIds.length}`,
-    };
-  }
-
-  if (!startTime) {
-    return { success: false, error: "Debes seleccionar una fecha y hora" };
-  }
-
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/v1/boletin/new`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        start_time: startTime,
-        audio_ids: orderedIds,
-      }),
-    });
-
-    let errorMessage = `Error ${response.status}`;
-
-    try {
-      const data: ApiResponseError = await response.json();
-
-      if (!response.ok || !data.ok) {
-        errorMessage = data.message || errorMessage;
-      }
-    } catch {
-      const textError = await response.text();
-      if (textError) {
-        errorMessage = textError;
-      }
-    }
-
-    if (!response.ok) {
-      return { success: false, error: errorMessage };
-    }
-
-    revalidatePath("/user/boletin/listar");
-
-    return { success: true, error: null };
-  } catch (error) {
-    console.error("Error en createCompoundBoletin:", error);
-    return { success: false, error: "Error de conexión con el servidor" };
-  }
+): Promise<ActionResponse> {
+  return createBoletin(orderedIds, startTime);
 }

@@ -1,3 +1,4 @@
+// app/user/audios/page.tsx
 import { AudiosClient } from "@/components/features/audios/AudiosClient";
 import { getAudios } from "@/app/actions/audio.actions";
 
@@ -18,7 +19,7 @@ export default async function AudiosPage({ searchParams }: AudiosPageProps) {
 
   return (
     <AudiosClient
-      initialData={result.data}
+      initialData={result}
       key={`${currentPage}-${pageSize}`}
       currentPage={currentPage}
     />

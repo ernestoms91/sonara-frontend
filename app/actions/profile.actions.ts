@@ -1,46 +1,69 @@
 // app/actions/profile.actions.ts
 "use server";
 
-import { cookies } from "next/headers";
+import { fetchWithAuth } from "@/lib/fetch-utils";
+import { ActionResponse } from "@/types/api";
 
-const BACKEND_URL = process.env.BACKEND_URL;
+// ============================================
+// TIPOS
+// ============================================
+export interface Profile {
+  id: number;
+  name: string;
+  description?: string;
+  language?: string;
+  gender?: string;
+  age?: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
-export async function getProfiles() {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("access_token")?.value;
+// ============================================
+// GET PROFILES - Obtener lista de perfiles de voz
+// ============================================
+export async function getProfiles(
+  page: number = 1,
+  size: number = 50,
+  activeOnly: boolean = true,
+): Promise<
+  ActionResponse<{
+    items: Profile[];
+    total: number;
+    page: number;
+    size: number;
+    pages: number;
+  }>
+> {
+  return fetchWithAuth<{
+    items: Profile[];
+    total: number;
+    page: number;
+    size: number;
+    pages: number;
+  }>(`/api/v1/profile/?page=${page}&size=${size}&active_only=${activeOnly}`);
+}
 
-    if (!token) {
-      return { success: false, error: "No autorizado", profiles: [] };
-    }
+// ============================================
+// GET PROFILE BY ID - Obtener un perfil por ID
+// ============================================
+export async function getProfileById(
+  profileId: number,
+): Promise<ActionResponse<Profile>> {
+  return fetchWithAuth<Profile>(`/api/v1/profile/${profileId}`);
+}
 
-    const response = await fetch(
-      `${BACKEND_URL}/api/v1/profile/?page=1&size=50&active_only=true`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      },
-    );
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: "Error al cargar perfiles",
-        profiles: [],
-      };
-    }
-
-    const data = await response.json();
-
-    return {
-      success: true,
-      profiles: data.data?.items || [],
-    };
-  } catch (error) {
-    console.error("Error en getProfiles:", error);
-    return { success: false, error: "Error de conexión", profiles: [] };
-  }
+// ============================================
+// GET ACTIVE PROFILES - Obtener solo perfiles activos
+// ============================================
+export async function getActiveProfiles(): Promise<
+  ActionResponse<{
+    items: Profile[];
+    total: number;
+    page: number;
+    size: number;
+    pages: number;
+  }>
+> {
+  return getProfiles(1, 100, true);
 }

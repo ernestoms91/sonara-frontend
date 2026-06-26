@@ -1,3 +1,4 @@
+// components/features/audios/AudioCard.tsx
 "use client";
 
 import {
@@ -10,23 +11,13 @@ import {
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { WaveformWithProgress } from "./Waveform";
-
-export interface AudioItem {
-  id: string;
-  code: string;
-  voice: string;
-  voiceName: string;
-  voiceName2?: string;
-  text: string;
-  duration: string;
-  timeAgo: string;
-  audio_url?: string;
-  waveform_url?: string;
-}
+import { AudioFromAPI } from "@/types/api";
 
 interface AudioCardProps {
-  audio: AudioItem;
-  onDelete: (audio: AudioItem) => void;
+  audio: AudioFromAPI;
+  onDelete: (audio: AudioFromAPI) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (id: number) => void;
 }
 
 const formatTime = (seconds: number): string => {
@@ -35,22 +26,19 @@ const formatTime = (seconds: number): string => {
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 };
 
-const parseDuration = (durationStr: string): number => {
-  const parts = durationStr.split(":");
-  if (parts.length === 2) {
-    return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-  }
-  return 0;
-};
-
-export function AudioCard({ audio, onDelete }: AudioCardProps) {
+export function AudioCard({
+  audio,
+  onDelete,
+  isSelected,
+  onToggleSelect,
+}: AudioCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isTextExpanded, setIsTextExpanded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const animationRef = useRef<number | undefined>(undefined);
   const listenersAttachedRef = useRef(false);
-  const durationSeconds = parseDuration(audio.duration);
+  const durationSeconds = audio.duration || 0;
 
   const updateTime = () => {
     if (audioRef.current) {
@@ -114,7 +102,7 @@ export function AudioCard({ audio, onDelete }: AudioCardProps) {
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
-      link.download = `${audio.code}.wav`;
+      link.download = `${audio.audio_id}.wav`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -139,27 +127,41 @@ export function AudioCard({ audio, onDelete }: AudioCardProps) {
   }, []);
 
   return (
-    <div className="group rounded-xl border border-border bg-card p-3 transition-all hover:border-primary/30 hover:shadow-md sm:p-4">
+    <div
+      className={`group rounded-xl border border-border bg-card p-3 transition-all hover:border-primary/30 hover:shadow-md sm:p-4 ${
+        isSelected ? "border-primary bg-primary/5" : ""
+      }`}
+    >
       <div className="flex flex-col gap-3 sm:gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
+            {onToggleSelect && (
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => onToggleSelect(audio.id)}
+                className="size-4 rounded border-border text-primary focus:ring-primary"
+              />
+            )}
             <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-mono text-primary">
-              #{audio.code.length > 3 ? audio.code.slice(-3) : audio.code}
+              #{audio.audio_id.slice(-4)}
             </span>
             <span className="text-xs text-muted-foreground">
               Voz:{" "}
               <span className="font-semibold text-foreground">
-                {audio.voiceName}
+                {audio.profile_name || "Desconocida"}
               </span>
-              {audio.voiceName2 && (
+              {audio.secondary_profile_name && (
                 <span className="font-semibold text-foreground">
                   {" / "}
-                  {audio.voiceName2}
+                  {audio.secondary_profile_name}
                 </span>
               )}
             </span>
           </div>
-          <span className="text-xs text-muted-foreground">{audio.timeAgo}</span>
+          <span className="text-xs text-muted-foreground">
+            {new Date(audio.created_at).toLocaleDateString()}
+          </span>
         </div>
 
         {/* Texto con toggle y respeto de saltos de línea */}
@@ -206,7 +208,7 @@ export function AudioCard({ audio, onDelete }: AudioCardProps) {
             </button>
 
             <span className="text-xs font-mono text-muted-foreground">
-              {formatTime(currentTime)} / {audio.duration}
+              {formatTime(currentTime)} / {formatTime(durationSeconds)}
             </span>
           </div>
 

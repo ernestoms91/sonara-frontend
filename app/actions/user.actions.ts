@@ -1,35 +1,79 @@
 // app/actions/user.actions.ts
 "use server";
 
-import { cookies } from "next/headers";
+import { fetchWithAuth } from "@/lib/fetch-utils";
+import { ActionResponse } from "@/types/api";
 
-const BACKEND_URL = process.env.BACKEND_URL;
+// ============================================
+// TIPOS
+// ============================================
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
+  is_active: boolean;
+  is_admin: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
-export async function getCurrentUser() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
+// ============================================
+// GET CURRENT USER - Obtener usuario actual (CON autenticación)
+// ============================================
+export async function getCurrentUser(): Promise<ActionResponse<User>> {
+  const result = await fetchWithAuth<{
+    user: User;
+  }>("/api/v1/auth/me");
 
-  if (!token) {
+  if (!result.success || !result.data) {
+    return {
+      success: false,
+      error: result.error || "Error al obtener usuario",
+      data: undefined,
+    };
+  }
+
+  // Extraemos el usuario de result.data.user
+  return {
+    success: true,
+    data: result.data.user,
+  };
+}
+
+// ============================================
+// GET CURRENT USER SIMPLIFICADO - Retorna solo el usuario o null
+// ============================================
+export async function getCurrentUserSimple(): Promise<User | null> {
+  const result = await getCurrentUser();
+
+  if (!result.success || !result.data) {
     return null;
   }
 
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/v1/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
+  return result.data;
+}
 
-    if (!response.ok) {
-      return null;
-    }
+// ============================================
+// UPDATE USER - Actualizar usuario
+// ============================================
+export async function updateUser(
+  userId: number,
+  data: Partial<Omit<User, "id" | "created_at" | "updated_at">>,
+): Promise<ActionResponse<User>> {
+  const result = await fetchWithAuth<User>(`/api/v1/user/${userId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
 
-    const result = await response.json();
-    return result.data;
-  } catch (error) {
-    console.error("Error fetching user:", error);
-    return null;
-  }
+  return result;
+}
+
+// ============================================
+// GET USER BY ID - Obtener usuario por ID (solo admin)
+// ============================================
+export async function getUserById(
+  userId: number,
+): Promise<ActionResponse<User>> {
+  return fetchWithAuth<User>(`/api/v1/user/${userId}`);
 }

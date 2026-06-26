@@ -3,23 +3,21 @@
 
 import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AudioCard } from "@/components/features/audios/AudioCard";
 import { CreateAudioDialog } from "@/components/features/audios/CreateAudioDialog";
-import { AudioFromAPI } from "@/types/audio";
-import { convertToAudioItem } from "@/lib/audio-utils";
 import { toast } from "sonner";
 import { deleteAudio } from "@/app/actions/audio.actions";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Pagination } from "@/components/common/Pagination";
+import { AudioFromAPI } from "@/types/api";
 
 interface AudiosClientProps {
   initialData: {
-    ok: boolean;
-    message?: string;
-    data: {
+    success: boolean;
+    error?: string;
+    data?: {
       items: AudioFromAPI[];
       total: number;
       page: number;
@@ -41,7 +39,15 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
     text: string;
   } | null>(null);
 
-  const { total, pages: totalPages, size: pageSize } = initialData.data;
+  const {
+    total,
+    pages: totalPages,
+    size: pageSize,
+  } = initialData.data || {
+    total: 0,
+    pages: 0,
+    size: 10,
+  };
 
   const refreshAudios = useCallback(() => {
     router.refresh();
@@ -64,11 +70,16 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
       if (result.success) {
         toast.success("Audio eliminado correctamente");
 
+        // 👇 ACTUALIZAR EL ESTADO LOCAL (sin recargar)
+        setAudios((prevAudios) =>
+          prevAudios.filter((audio) => audio.id !== audioToDelete.id),
+        );
+
+        // Si no quedan audios en la página actual y no estamos en la primera página
         if (audios.length === 1 && currentPage > 1) {
           router.push(`/user/audios?page=${currentPage - 1}&size=${pageSize}`);
-        } else {
-          router.refresh();
         }
+        // Si quedan audios, solo actualizamos el estado local, NO recargamos
       } else {
         toast.error(result.error || "Error al eliminar el audio");
       }
@@ -150,7 +161,7 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
               filteredAudios.map((audio) => (
                 <AudioCard
                   key={audio.id}
-                  audio={convertToAudioItem(audio)}
+                  audio={audio}
                   onDelete={() => handleDeleteClick(audio.id, audio.text)}
                 />
               ))
