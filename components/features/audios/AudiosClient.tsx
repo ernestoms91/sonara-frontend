@@ -31,7 +31,12 @@ interface AudiosClientProps {
 export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Estados locales para optimistic updates
   const [audios, setAudios] = useState(initialData.data?.items || []);
+  const [totalItems, setTotalItems] = useState(initialData.data?.total || 0);
+  const [totalPages, setTotalPages] = useState(initialData.data?.pages || 0);
+
   const [isPending, startTransition] = useTransition();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [audioToDelete, setAudioToDelete] = useState<{
@@ -39,19 +44,17 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
     text: string;
   } | null>(null);
 
-  const {
-    total,
-    pages: totalPages,
-    size: pageSize,
-  } = initialData.data || {
-    total: 0,
-    pages: 0,
-    size: 10,
-  };
+  const pageSize = initialData.data?.size || 10;
 
-  const refreshAudios = useCallback(() => {
-    router.refresh();
-  }, [router]);
+  //  Función para agregar audio nuevo al estado local (optimistic update)
+  const handleAudioCreated = useCallback(
+    (newAudio: AudioFromAPI) => {
+      setAudios((prev) => [newAudio, ...prev]);
+      setTotalItems((prev) => prev + 1);
+      setTotalPages((prev) => Math.ceil((totalItems + 1) / pageSize));
+    },
+    [pageSize, totalItems],
+  );
 
   const handleDeleteClick = useCallback(
     (audioId: number, audioText: string) => {
@@ -70,16 +73,17 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
       if (result.success) {
         toast.success("Audio eliminado correctamente");
 
-        // 👇 ACTUALIZAR EL ESTADO LOCAL (sin recargar)
+        //  Actualizar estado local sin recargar
         setAudios((prevAudios) =>
           prevAudios.filter((audio) => audio.id !== audioToDelete.id),
         );
+        setTotalItems((prev) => prev - 1);
+        setTotalPages((prev) => Math.ceil((totalItems - 1) / pageSize));
 
-        // Si no quedan audios en la página actual y no estamos en la primera página
+        // Si no quedan audios en la página actual y no estamos en la primera
         if (audios.length === 1 && currentPage > 1) {
           router.push(`/user/audios?page=${currentPage - 1}&size=${pageSize}`);
         }
-        // Si quedan audios, solo actualizamos el estado local, NO recargamos
       } else {
         toast.error(result.error || "Error al eliminar el audio");
       }
@@ -87,7 +91,7 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
       setDeleteDialogOpen(false);
       setAudioToDelete(null);
     });
-  }, [audioToDelete, audios.length, currentPage, pageSize, router]);
+  }, [audioToDelete, audios.length, currentPage, pageSize, router, totalItems]);
 
   const filteredAudios =
     searchQuery.trim() === ""
@@ -113,12 +117,12 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
     );
   }
 
-  if (total === 0) {
+  if (totalItems === 0) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">No tienes audios aún</p>
-          <CreateAudioDialog onSuccess={refreshAudios} />
+          <CreateAudioDialog onSuccess={handleAudioCreated} />
         </div>
       </div>
     );
@@ -127,7 +131,7 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
   return (
     <>
       <div className="flex h-full flex-col">
-        {/* Header simplificado */}
+        {/* Header */}
         <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md px-4 py-3 md:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-xl font-bold md:text-2xl">Mis Audios</h1>
@@ -142,7 +146,7 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
               />
             </div>
 
-            <CreateAudioDialog onSuccess={refreshAudios} />
+            <CreateAudioDialog onSuccess={handleAudioCreated} />
           </div>
         </header>
 
@@ -173,7 +177,7 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
-          totalItems={total}
+          totalItems={totalItems}
           itemLabel="audio"
           onPageChange={handlePageChange}
         />

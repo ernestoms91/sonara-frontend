@@ -35,7 +35,7 @@ export async function getAudios(
 export async function createAudio(
   profileId: number,
   text: string,
-): Promise<ActionResponse> {
+): Promise<ActionResponse<AudioFromAPI>> {
   if (!profileId) {
     return { success: false, error: "Debes seleccionar un perfil de voz." };
   }
@@ -44,10 +44,13 @@ export async function createAudio(
     return { success: false, error: "El texto no puede estar vacío." };
   }
 
-  const result = await fetchWithAuth(`/api/v1/audio/generate/${profileId}`, {
-    method: "POST",
-    body: JSON.stringify({ text }),
-  });
+  const result = await fetchWithAuth<AudioFromAPI>(
+    `/api/v1/audio/generate/${profileId}`,
+    {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    },
+  );
 
   if (result.success) {
     revalidatePath("/user/audios");
@@ -63,7 +66,7 @@ export async function createDuetAudio(
   profileAId: number,
   profileBId: number,
   text: string,
-): Promise<ActionResponse> {
+): Promise<ActionResponse<AudioFromAPI>> {
   if (!profileAId || !profileBId) {
     return {
       success: false,
@@ -82,7 +85,7 @@ export async function createDuetAudio(
     return { success: false, error: "El texto no puede estar vacío." };
   }
 
-  const result = await fetchWithAuth(
+  const result = await fetchWithAuth<AudioFromAPI>(
     `/api/v1/audio/generate-duet/${profileAId}/${profileBId}`,
     { method: "POST", body: JSON.stringify({ text }) },
   );

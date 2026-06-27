@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { createAudio, createDuetAudio } from "@/app/actions/audio.actions";
 import { getProfiles, type Profile } from "@/app/actions/profile.actions";
+import { AudioFromAPI } from "@/types/api";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +29,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
 interface CreateAudioDialogProps {
-  onSuccess?: () => void;
+  onSuccess?: (newAudio: AudioFromAPI) => void; // ✅ Cambiado para recibir el audio
 }
 
 type GenerationMode = "single" | "duet";
@@ -199,8 +200,12 @@ export function CreateAudioDialog({ onSuccess }: CreateAudioDialogProps) {
           : "Dueto generado correctamente",
       );
 
+      // Pasar el audio creado al callback si existe
+      if (onSuccess && result.data) {
+        onSuccess(result.data);
+      }
+
       resetForm();
-      onSuccess?.();
     } catch (error) {
       console.error(error);
       toast.error("Error al generar audio");

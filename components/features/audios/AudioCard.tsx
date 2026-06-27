@@ -144,7 +144,7 @@ export function AudioCard({
               />
             )}
             <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-mono text-primary">
-              #{audio.audio_id.slice(-4)}
+              #{audio.id.toString().slice(-4)}
             </span>
             <span className="text-xs text-muted-foreground">
               Voz:{" "}
