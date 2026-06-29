@@ -35,7 +35,10 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
   // Estados locales para optimistic updates
   const [audios, setAudios] = useState(initialData.data?.items || []);
   const [totalItems, setTotalItems] = useState(initialData.data?.total || 0);
-  const [totalPages, setTotalPages] = useState(initialData.data?.pages || 0);
+  const pageSize = initialData.data?.size || 10;
+
+  // ✅ Calcular totalPages dinámicamente
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   const [isPending, startTransition] = useTransition();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -44,16 +47,20 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
     text: string;
   } | null>(null);
 
-  const pageSize = initialData.data?.size || 10;
-
-  //  Función para agregar audio nuevo al estado local (optimistic update)
+  // Función para agregar audio nuevo al estado local (optimistic update)
   const handleAudioCreated = useCallback(
     (newAudio: AudioFromAPI) => {
-      setAudios((prev) => [newAudio, ...prev]);
+      setAudios((prev) => {
+        // Agregar al principio y mantener el tamaño de página
+        const newList = [newAudio, ...prev];
+        if (newList.length > pageSize) {
+          return newList.slice(0, pageSize);
+        }
+        return newList;
+      });
       setTotalItems((prev) => prev + 1);
-      setTotalPages((prev) => Math.ceil((totalItems + 1) / pageSize));
     },
-    [pageSize, totalItems],
+    [pageSize],
   );
 
   const handleDeleteClick = useCallback(
@@ -73,15 +80,23 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
       if (result.success) {
         toast.success("Audio eliminado correctamente");
 
-        //  Actualizar estado local sin recargar
-        setAudios((prevAudios) =>
-          prevAudios.filter((audio) => audio.id !== audioToDelete.id),
+        // ✅ Actualizar estado local
+        const newAudios = audios.filter(
+          (audio) => audio.id !== audioToDelete.id,
         );
-        setTotalItems((prev) => prev - 1);
-        setTotalPages((prev) => Math.ceil((totalItems - 1) / pageSize));
+        const newTotal = totalItems - 1;
+
+        setAudios(newAudios);
+        setTotalItems(newTotal);
+
+        // ✅ Si la página queda con menos de pageSize elementos y hay más en total
+        if (newAudios.length < pageSize && newTotal >= pageSize) {
+          // La key en page.tsx forzará el remontaje con los datos correctos
+          router.push(`/user/audios?page=${currentPage}&size=${pageSize}`);
+        }
 
         // Si no quedan audios en la página actual y no estamos en la primera
-        if (audios.length === 1 && currentPage > 1) {
+        if (newAudios.length === 0 && currentPage > 1) {
           router.push(`/user/audios?page=${currentPage - 1}&size=${pageSize}`);
         }
       } else {
@@ -91,7 +106,7 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
       setDeleteDialogOpen(false);
       setAudioToDelete(null);
     });
-  }, [audioToDelete, audios.length, currentPage, pageSize, router, totalItems]);
+  }, [audioToDelete, audios, totalItems, currentPage, pageSize, router]);
 
   const filteredAudios =
     searchQuery.trim() === ""
@@ -102,6 +117,7 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
 
   const handlePageChange = (page: number) => {
     router.push(`/user/audios?page=${page}&size=${pageSize}`);
+    // ✅ No necesitamos router.refresh() aquí, la key en page.tsx forzará el remontaje
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 

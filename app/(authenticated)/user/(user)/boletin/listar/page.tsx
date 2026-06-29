@@ -1,4 +1,4 @@
-// app/user/boletines/listar/page.tsx
+// app/(authenticated)/user/boletin/listar/page.tsx
 import { getBoletines } from "@/app/actions/boletin.actions";
 import ListarBoletinesClient from "@/components/features/boletin/ListarBoletinesClient";
 
@@ -23,9 +23,12 @@ export default async function ListarBoletinesPage({
     throw new Error(result.error || "Error al cargar boletines");
   }
 
+  // ✅ Key que cambia cuando el total o la página cambian
+  const key = `${currentPage}-${pageSize}-${result.data.total}`;
+
   return (
     <ListarBoletinesClient
-      key={`${currentPage}-${pageSize}`}
+      key={key}
       initialData={result}
       currentPage={currentPage}
     />

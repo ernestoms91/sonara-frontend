@@ -1,4 +1,4 @@
-// app/user/audios/page.tsx
+// app/(authenticated)/user/(user)/audios/page.tsx
 import { AudiosClient } from "@/components/features/audios/AudiosClient";
 import { getAudios } from "@/app/actions/audio.actions";
 
@@ -17,11 +17,10 @@ export default async function AudiosPage({ searchParams }: AudiosPageProps) {
     throw new Error(result.error || "Error al cargar audios");
   }
 
+  // Key que cambia cuando el total o la página cambian
+  const key = `${currentPage}-${pageSize}-${result.data.total}`;
+
   return (
-    <AudiosClient
-      initialData={result}
-      key={`${currentPage}-${pageSize}`}
-      currentPage={currentPage}
-    />
+    <AudiosClient key={key} initialData={result} currentPage={currentPage} />
   );
 }

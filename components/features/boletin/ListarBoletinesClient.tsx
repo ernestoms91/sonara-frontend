@@ -66,7 +66,6 @@ export default function ListarBoletinesClient({
   } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoadingAudios, setIsLoadingAudios] = useState(false);
-  // Cache de audios por boletín para no recargar
   const [audiosCache, setAudiosCache] = useState<Map<number, AudioFromAPI[]>>(
     new Map(),
   );
@@ -114,7 +113,7 @@ export default function ListarBoletinesClient({
         if (result.success) {
           toast.success("Boletín eliminado correctamente");
 
-          // Eliminar del estado local
+          // ✅ Actualizar estado local optimistamente
           setBoletines((prev) =>
             prev.filter((b) => b.id !== boletinToDelete.id),
           );
@@ -124,12 +123,13 @@ export default function ListarBoletinesClient({
             return newCache;
           });
 
-          // Si no hay más boletines y estamos en página > 1
+          // ✅ Si no hay más boletines y estamos en página > 1, ir a la anterior
           if (boletines.length === 1 && currentPage > 1) {
             router.push(
               `/user/boletin/listar?page=${currentPage - 1}&size=${pageSize}`,
             );
           }
+          // ✅ La key en page.tsx forzará el remontaje cuando el total cambie
         } else {
           toast.error(result.error || "Error al eliminar el boletín");
         }
@@ -144,7 +144,7 @@ export default function ListarBoletinesClient({
 
   const handlePageChange = (page: number) => {
     router.push(`/user/boletin/listar?page=${page}&size=${pageSize}`);
-    router.refresh();
+    // ✅ No necesitamos router.refresh() aquí, la key en page.tsx forzará el remontaje
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -153,7 +153,6 @@ export default function ListarBoletinesClient({
     async (boletin: BoletinFromAPI) => {
       if (isLoadingDetail) return;
 
-      // Si ya tenemos los audios en caché o en el objeto, usarlos
       if (boletin.audios && boletin.audios.length > 0) {
         setBoletinDetail({
           id: boletin.id,
@@ -170,7 +169,6 @@ export default function ListarBoletinesClient({
         return;
       }
 
-      // Si no tiene audios, intentar cargarlos
       setIsLoadingDetail(true);
       const loadingToast = toast.loading("Cargando detalles...");
 
@@ -191,7 +189,6 @@ export default function ListarBoletinesClient({
           return;
         }
 
-        // Guardar en caché
         setAudiosCache((prev) =>
           new Map(prev).set(boletin.id, boletinCompleto.audios),
         );
@@ -230,7 +227,6 @@ export default function ListarBoletinesClient({
         return;
       }
 
-      // Si ya tenemos los audios en caché, usarlos
       if (audiosCache.has(boletin.id)) {
         const cachedAudios = audiosCache.get(boletin.id)!;
         setEditingBoletin({
@@ -301,7 +297,6 @@ export default function ListarBoletinesClient({
         if (result.success) {
           toast.success("Boletín actualizado correctamente");
 
-          // Actualizar el boletín en el estado local
           setBoletines((prev) =>
             prev.map((b) =>
               b.id === editingBoletin.id ? { ...b, start_time: startTime } : b,
@@ -377,7 +372,6 @@ export default function ListarBoletinesClient({
   return (
     <>
       <div className="flex h-full flex-col">
-        {/* Header */}
         <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md px-3 py-2 sm:px-4 sm:py-3 md:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <h1 className="text-base font-bold sm:text-xl md:text-2xl">
@@ -394,10 +388,8 @@ export default function ListarBoletinesClient({
           </div>
         </header>
 
-        {/* Lista de boletines */}
         <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-6 lg:p-8">
           <div className="mx-auto max-w-7xl">
-            {/* Desktop: Tabla (solo en lg) */}
             <div className="hidden lg:block glass-panel rounded-2xl overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -514,14 +506,12 @@ export default function ListarBoletinesClient({
               </div>
             </div>
 
-            {/* Mobile & Tablet: Tarjetas (hasta lg) */}
             <div className="lg:hidden space-y-3">
               {boletines.map((boletin) => (
                 <div
                   key={boletin.id}
                   className="glass-panel rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-3 sm:p-4 hover:border-primary/20 transition-colors"
                 >
-                  {/* Fila superior: ID y acciones */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono text-xs sm:text-sm text-primary bg-primary/10 px-2 py-0.5 rounded">
@@ -535,7 +525,6 @@ export default function ListarBoletinesClient({
                       </span>
                     </div>
 
-                    {/* Acciones - Tablet/Desktop */}
                     <div className="hidden sm:flex items-center gap-1">
                       <Button
                         variant="ghost"
@@ -581,7 +570,6 @@ export default function ListarBoletinesClient({
                       </Button>
                     </div>
 
-                    {/* Acciones - Móvil */}
                     <div className="sm:hidden">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -635,7 +623,6 @@ export default function ListarBoletinesClient({
                     </div>
                   </div>
 
-                  {/* Cuerpo: fecha y hora con AM/PM */}
                   <div className="mt-2 sm:mt-3 grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2">
                     <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
                       <Calendar className="size-3 sm:size-3.5 shrink-0" />
@@ -655,7 +642,6 @@ export default function ListarBoletinesClient({
                     </div>
                   </div>
 
-                  {/* Contador - Móvil */}
                   <div className="mt-2 sm:hidden">
                     <span className="inline-flex items-center gap-1 bg-muted/50 px-2.5 py-0.5 rounded-full text-xs font-medium text-muted-foreground border border-border/50">
                       <FileText className="size-3" />
@@ -667,7 +653,6 @@ export default function ListarBoletinesClient({
               ))}
             </div>
 
-            {/* Paginación */}
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -679,7 +664,6 @@ export default function ListarBoletinesClient({
         </div>
       </div>
 
-      {/* Modal de edición */}
       {editingBoletin && (
         <EditarBoletinesModal
           key={`edit-${editingBoletin.id}`}
@@ -697,7 +681,6 @@ export default function ListarBoletinesClient({
         />
       )}
 
-      {/* Modal de ver detalles */}
       {boletinDetail && (
         <VerBoletinModal
           open={verModalOpen}

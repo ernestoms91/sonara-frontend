@@ -15,7 +15,7 @@ export default async function ProfilesPage({
   const params = await searchParams;
 
   const currentPage = Math.max(1, Number(params.page) || 1);
-  const pageSize = Math.min(100, Math.max(1, Number(params.size) || 2));
+  const pageSize = Math.min(100, Math.max(1, Number(params.size) || 10));
 
   const result = await getProfiles(currentPage, pageSize);
 
