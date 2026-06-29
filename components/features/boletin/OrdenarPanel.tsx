@@ -3,8 +3,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { GripVertical, ArrowUp, ArrowDown, X } from "lucide-react";
-import { AudioFromAPI } from "@/types/audio";
+import { ArrowUp, ArrowDown, X } from "lucide-react";
+import { AudioFromAPI } from "@/types/api";
 
 interface OrdenarPanelProps {
   items: AudioFromAPI[];

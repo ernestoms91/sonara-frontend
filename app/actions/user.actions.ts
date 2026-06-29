@@ -22,9 +22,7 @@ export interface User {
 // GET CURRENT USER - Obtener usuario actual (CON autenticación)
 // ============================================
 export async function getCurrentUser(): Promise<ActionResponse<User>> {
-  const result = await fetchWithAuth<{
-    user: User;
-  }>("/api/v1/auth/me");
+  const result = await fetchWithAuth<User>("/api/v1/auth/me");
 
   if (!result.success || !result.data) {
     return {
@@ -34,10 +32,9 @@ export async function getCurrentUser(): Promise<ActionResponse<User>> {
     };
   }
 
-  // Extraemos el usuario de result.data.user
   return {
     success: true,
-    data: result.data.user,
+    data: result.data,
   };
 }
 

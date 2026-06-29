@@ -21,6 +21,23 @@ export interface LoginData {
 }
 
 // ============================================
+// PERFIL DE VOZ
+// ============================================
+export interface Profile {
+  id: number;
+  name: string;
+  folder_id: string;
+  active: boolean;
+  connectors_ready: boolean;
+  ref_text: string;
+  model_type: string;
+  hours_ready: boolean;
+  minutes_ready: boolean;
+  language: string;
+  created_at: string;
+}
+
+// ============================================
 // AUDIO
 // ============================================
 export interface AudioFromAPI {
@@ -135,6 +152,17 @@ export type BoletinDetailClientResponse = ActionResponse<BoletinDetailData>;
 // ============================================
 export type AudioListClientResponse = ActionResponse<{
   items: AudioFromAPI[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}>;
+
+// ============================================
+// TIPOS PARA PERFILES (Client)
+// ============================================
+export type ProfileListClientResponse = ActionResponse<{
+  items: Profile[];
   total: number;
   page: number;
   size: number;

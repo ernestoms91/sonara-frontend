@@ -4,7 +4,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useTransition } from "react";
 
 import type { LucideIcon } from "lucide-react";
 import {
@@ -13,6 +13,8 @@ import {
   LogOut,
   ChevronDown,
   ChevronRight,
+  Users,
+  UserCog,
 } from "lucide-react";
 
 import {
@@ -29,7 +31,7 @@ import {
   SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 import { ThemeButtonDynamic } from "./theme-button-dynamic";
-import { getCurrentUser } from "@/app/actions/user.actions";
+import { logoutAction } from "@/app/actions/auth.action";
 
 interface UserData {
   id: number;
@@ -59,6 +61,10 @@ interface NavGroup {
   subItems: SubNavItem[];
 }
 
+interface AppSidebarProps {
+  user?: UserData | null;
+}
+
 const navItems: NavItem[] = [
   {
     title: "Audios",
@@ -82,37 +88,31 @@ const boletinesGroup: NavGroup = {
   ],
 };
 
-export function AppSidebar() {
+const adminItems: NavItem[] = [
+  {
+    title: "Perfiles",
+    url: "/user/profiles",
+    icon: Users,
+  },
+  {
+    title: "Usuarios",
+    url: "/user/users",
+    icon: UserCog,
+  },
+];
+
+export function AppSidebar({ user }: AppSidebarProps) {
   const pathname = usePathname();
   const [isBoletinesOpen, setIsBoletinesOpen] = useState(() => {
     return pathname.startsWith("/user/boletines");
   });
+  const [isLoggingOut, startLogoutTransition] = useTransition();
 
-  // ✅ Estado para el usuario
-  const [user, setUser] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const isAdmin = user?.is_admin === true;
 
-  // ✅ Cargar el usuario al montar el componente
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const userData = await getCurrentUser();
-        setUser(userData);
-      } catch (error) {
-        console.error("Error loading user:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const displayName = user?.full_name || "Usuario";
+  const displayPlan = isAdmin ? "Administrador" : "Editor";
 
-    loadUser();
-  }, []);
-
-  // ✅ Datos del usuario para mostrar
-  const displayName = user?.full_name || user?.username || "Usuario";
-  const displayPlan = user?.is_admin ? "Administrador" : "Plan Gratuito";
-
-  // Iniciales del nombre
   const initials = displayName
     .split(" ")
     .map((word) => word[0])
@@ -126,6 +126,12 @@ export function AppSidebar() {
 
   const isBoletinesActive = () => {
     return pathname.startsWith("/user/boletines");
+  };
+
+  const handleLogout = () => {
+    startLogoutTransition(async () => {
+      await logoutAction();
+    });
   };
 
   return (
@@ -211,30 +217,61 @@ export function AppSidebar() {
               </SidebarMenuSub>
             )}
           </SidebarMenuItem>
+
+          {isAdmin && (
+            <>
+              <div className="my-2 border-t border-border" />
+
+              {adminItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isItemActive(item.url)}
+                    tooltip={item.title}
+                    className="px-3 py-2 text-sm lg:px-4 lg:py-2.5 lg:text-base"
+                  >
+                    <Link
+                      href={item.url}
+                      className="flex items-center gap-3 lg:gap-4"
+                    >
+                      <item.icon className="size-5 shrink-0" />
+                      <span className="truncate font-medium">{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </>
+          )}
         </SidebarMenu>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border p-4 lg:p-5">
         <div className="flex items-center gap-3 overflow-hidden lg:gap-4">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary lg:size-10 lg:text-sm">
-            {isLoading ? "..." : initials}
+            {initials}
           </div>
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-foreground lg:text-base">
-              {isLoading ? "Cargando..." : displayName}
+              {displayName}
             </p>
             <p className="truncate text-xs text-muted-foreground lg:text-sm">
-              {isLoading ? "..." : displayPlan}
+              {displayPlan}
             </p>
           </div>
 
           <button
             type="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
             aria-label="Cerrar sesión"
             className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 lg:p-2.5"
           >
-            <LogOut className="size-4 lg:size-5" />
+            {isLoggingOut ? (
+              <div className="size-4 lg:size-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+            ) : (
+              <LogOut className="size-4 lg:size-5" />
+            )}
           </button>
         </div>
       </SidebarFooter>

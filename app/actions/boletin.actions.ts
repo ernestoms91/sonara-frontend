@@ -5,9 +5,8 @@ import { revalidatePath } from "next/cache";
 import { fetchWithAuth } from "@/lib/fetch-utils";
 import {
   ActionResponse,
-  BoletinFromAPI,
-  CreateBoletinRequest,
-  UpdateBoletinRequest,
+  BoletinDetailData,
+  BoletinListData,
 } from "@/types/api";
 
 // ============================================
@@ -17,51 +16,19 @@ export async function getBoletines(
   page: number = 1,
   size: number = 30,
   activeOnly: boolean = true,
-): Promise<
-  ActionResponse<{
-    items: BoletinFromAPI[];
-    total: number;
-    page: number;
-    size: number;
-    pages: number;
-  }>
-> {
-  return fetchWithAuth<{
-    items: BoletinFromAPI[];
-    total: number;
-    page: number;
-    size: number;
-    pages: number;
-  }>(`/api/v1/boletin/all?page=${page}&size=${size}&active_only=${activeOnly}`);
+): Promise<ActionResponse<BoletinListData>> {
+  return fetchWithAuth<BoletinListData>(
+    `/api/v1/boletin/all?page=${page}&size=${size}&active_only=${activeOnly}`,
+  );
 }
 
 // ============================================
 // GET BOLETIN BY ID - Obtener un boletín por ID
 // ============================================
-export async function getBoletinById(boletinId: number): Promise<
-  ActionResponse<{
-    id: number;
-    start_time: string;
-    created_by: string;
-    created_at: string;
-    updated_at: string;
-    active: boolean;
-    audio_count: number;
-    audio_ids: string[];
-    audios: string[];
-  }>
-> {
-  return fetchWithAuth<{
-    id: number;
-    start_time: string;
-    created_by: string;
-    created_at: string;
-    updated_at: string;
-    active: boolean;
-    audio_count: number;
-    audio_ids: string[];
-    audios: string[];
-  }>(`/api/v1/boletin/${boletinId}`);
+export async function getBoletinById(
+  boletinId: number,
+): Promise<ActionResponse<BoletinDetailData>> {
+  return fetchWithAuth<BoletinDetailData>(`/api/v1/boletin/${boletinId}`);
 }
 
 // ============================================
@@ -71,7 +38,6 @@ export async function createBoletin(
   orderedIds: string[],
   startTime: string,
 ): Promise<ActionResponse> {
-  // Validaciones
   if (orderedIds.length !== 30) {
     return {
       success: false,
@@ -86,14 +52,12 @@ export async function createBoletin(
     };
   }
 
-  const body: CreateBoletinRequest = {
-    start_time: startTime,
-    audio_ids: orderedIds,
-  };
-
   const result = await fetchWithAuth("/api/v1/boletin/new", {
     method: "POST",
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      start_time: startTime,
+      audio_ids: orderedIds,
+    }),
   });
 
   if (result.success) {
@@ -111,7 +75,6 @@ export async function updateBoletin(
   audioIds: string[],
   startTime: string,
 ): Promise<ActionResponse> {
-  // Validaciones
   if (audioIds.length !== 30) {
     return {
       success: false,
@@ -126,14 +89,12 @@ export async function updateBoletin(
     };
   }
 
-  const body: UpdateBoletinRequest = {
-    audio_ids: audioIds,
-    start_time: startTime,
-  };
-
   const result = await fetchWithAuth(`/api/v1/boletin/${boletinId}`, {
     method: "PUT",
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      audio_ids: audioIds,
+      start_time: startTime,
+    }),
   });
 
   if (result.success) {
@@ -162,7 +123,7 @@ export async function deleteBoletin(
 }
 
 // ============================================
-// CREATE COMPOUND BOLETIN - Crear boletín compuesto (alias de createBoletin)
+// CREATE COMPOUND BOLETIN - Alias de createBoletin
 // ============================================
 export async function createCompoundBoletin(
   orderedIds: string[],

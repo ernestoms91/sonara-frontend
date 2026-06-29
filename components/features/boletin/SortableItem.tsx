@@ -1,10 +1,10 @@
 // components/features/boletines/SortableItem.tsx
 "use client";
 
+import { AudioFromAPI } from "@/types/api";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
-import { AudioFromAPI } from "@/types/audio";
 
 interface SortableItemProps {
   item: AudioFromAPI;

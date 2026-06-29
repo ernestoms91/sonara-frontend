@@ -77,3 +77,12 @@ export async function loginAction(prevState: LoginState, formData: FormData) {
   // 5. Redirigir
   redirect("/user/audios");
 }
+
+// ============================================
+// LOGOUT - Cerrar sesión
+// ============================================
+export async function logoutAction() {
+  const cookieStore = await cookies();
+  cookieStore.delete("access_token");
+  redirect("/login");
+}

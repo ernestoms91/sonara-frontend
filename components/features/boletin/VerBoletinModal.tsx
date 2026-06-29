@@ -13,8 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User, FileText, Volume2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { AudioFromAPI } from "@/types/audio";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AudioFromAPI } from "@/types/api";
 
 interface BoletinDetail {
   id: number;
