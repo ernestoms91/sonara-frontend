@@ -1,4 +1,4 @@
-// app/actions/auth.actions.ts
+// app/actions/auth.action.ts
 "use server";
 
 import { redirect } from "next/navigation";
@@ -19,10 +19,9 @@ const loginSchema = z.object({
 });
 
 // ============================================
-// LOGIN - Iniciar sesión (SIN autenticación)
+// LOGIN - Iniciar sesión
 // ============================================
 export async function loginAction(prevState: LoginState, formData: FormData) {
-  // 1. Validar los datos
   const validated = loginSchema.safeParse({
     username: formData.get("username"),
     password: formData.get("password"),
@@ -30,7 +29,6 @@ export async function loginAction(prevState: LoginState, formData: FormData) {
 
   if (!validated.success) {
     const errors: Record<string, { message: string }[]> = {};
-
     Object.entries(validated.error.flatten().fieldErrors).forEach(
       ([key, value]) => {
         if (value) {
@@ -38,13 +36,12 @@ export async function loginAction(prevState: LoginState, formData: FormData) {
         }
       },
     );
-
     return { errors };
   }
 
-  // 2. Llamar a FastAPI usando fetchWithoutAuth
   const result = await fetchWithoutAuth<{
     access_token: string;
+    refresh_token: string;
     token_type: string;
     user: {
       id: number;
@@ -59,22 +56,28 @@ export async function loginAction(prevState: LoginState, formData: FormData) {
     }),
   });
 
-  // 3. Manejar errores
   if (!result.success || !result.data) {
     return { error: result.error || "Credenciales incorrectas" };
   }
 
-  // 4. Guardar el token en cookie
   const cookieStore = await cookies();
+
   cookieStore.set("access_token", result.data.access_token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: Number(process.env.JWT_EXPIRES_MIN) * 60,
+    maxAge: Number(process.env.JWT_EXPIRES_MIN) * 60 || 60 * 15,
     path: "/",
   });
 
-  // 5. Redirigir
+  cookieStore.set("refresh_token", result.data.refresh_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 30,
+    path: "/",
+  });
+
   redirect("/user/audios");
 }
 
@@ -84,5 +87,6 @@ export async function loginAction(prevState: LoginState, formData: FormData) {
 export async function logoutAction() {
   const cookieStore = await cookies();
   cookieStore.delete("access_token");
-  redirect("/login");
+  cookieStore.delete("refresh_token");
+  redirect("/");
 }

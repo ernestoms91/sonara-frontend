@@ -6,6 +6,9 @@ import { ActionResponse } from "@/types/api";
 
 const BACKEND_URL = process.env.BACKEND_URL;
 
+// ============================================
+// GET AUTH HEADERS
+// ============================================
 export async function getAuthHeaders() {
   const cookieStore = await cookies();
   const token = cookieStore.get("access_token")?.value;
@@ -20,6 +23,9 @@ export async function getAuthHeaders() {
   };
 }
 
+// ============================================
+// GET ERROR MESSAGE
+// ============================================
 export async function getErrorMessage(response: Response) {
   try {
     const data = await response.json();
@@ -33,6 +39,9 @@ export async function getErrorMessage(response: Response) {
   }
 }
 
+// ============================================
+// FETCH WITHOUT AUTH
+// ============================================
 export async function fetchWithoutAuth<T>(
   url: string,
   options?: RequestInit,
@@ -59,7 +68,6 @@ export async function fetchWithoutAuth<T>(
 
     const responseData = await response.json();
 
-    // Si la respuesta tiene la estructura { ok, message, data }
     if (responseData.ok !== undefined && responseData.data !== undefined) {
       return {
         success: responseData.ok,
@@ -68,7 +76,6 @@ export async function fetchWithoutAuth<T>(
       };
     }
 
-    // Si la respuesta es directa (sin wrapper)
     return {
       success: true,
       error: undefined,
@@ -84,6 +91,9 @@ export async function fetchWithoutAuth<T>(
   }
 }
 
+// ============================================
+// FETCH WITH AUTH - SIN lógica de refresh
+// ============================================
 export async function fetchWithAuth<T>(
   url: string,
   options?: RequestInit,
@@ -101,10 +111,9 @@ export async function fetchWithAuth<T>(
 
     const fullUrl = url.startsWith("http") ? url : `${BACKEND_URL}${url}`;
 
-    // Si el body es FormData, no establecer Content-Type
     const isFormData = options?.body instanceof FormData;
     const requestHeaders = isFormData
-      ? { Authorization: headers.Authorization } // Solo el token, sin Content-Type
+      ? { Authorization: headers.Authorization }
       : { ...headers, "Content-Type": "application/json" };
 
     const response = await fetch(fullUrl, {
@@ -120,8 +129,11 @@ export async function fetchWithAuth<T>(
       const errorMessage = await getErrorMessage(response);
 
       if (response.status === 401) {
-        const cookieStore = await cookies();
-        cookieStore.delete("access_token");
+        return {
+          success: false,
+          error: "UNAUTHORIZED",
+          data: undefined,
+        };
       }
 
       return {
@@ -133,7 +145,6 @@ export async function fetchWithAuth<T>(
 
     const responseData = await response.json();
 
-    // Si la respuesta tiene la estructura { ok, message, data }
     if (responseData.ok !== undefined && responseData.data !== undefined) {
       return {
         success: responseData.ok,
@@ -142,7 +153,6 @@ export async function fetchWithAuth<T>(
       };
     }
 
-    // Si la respuesta es directa (sin wrapper)
     return {
       success: true,
       error: undefined,
@@ -159,7 +169,7 @@ export async function fetchWithAuth<T>(
 }
 
 // ============================================
-// FETCH WITH AUTH FORM DATA - Para subida de archivos
+// FETCH WITH AUTH FORM DATA
 // ============================================
 export async function fetchWithAuthFormData<T>(
   url: string,
@@ -185,7 +195,6 @@ export async function fetchWithAuthFormData<T>(
       method: options?.method || "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        // NO agregar Content-Type, fetch lo establece automáticamente con boundary
         ...(options?.headers || {}),
       },
       body: formData,
@@ -196,8 +205,11 @@ export async function fetchWithAuthFormData<T>(
       const errorMessage = await getErrorMessage(response);
 
       if (response.status === 401) {
-        const cookieStore = await cookies();
-        cookieStore.delete("access_token");
+        return {
+          success: false,
+          error: "UNAUTHORIZED",
+          data: undefined,
+        };
       }
 
       return {

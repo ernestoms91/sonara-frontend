@@ -53,7 +53,6 @@ export default function ProfilesClient({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState<Profile | null>(null);
 
-  // ✅ Siempre usar los datos frescos de initialData
   const allItems = initialData.data?.items || [];
   const [allProfiles, setAllProfiles] = useState<Profile[]>(allItems);
   const [profiles, setProfiles] = useState<Profile[]>(allItems);
@@ -79,7 +78,7 @@ export default function ProfilesClient({
 
   const handlePageChange = (page: number) => {
     router.push(`/user/profiles?page=${page}&size=${pageSize}`);
-    // ✅ No necesitamos refresh aquí porque la key en page.tsx forzará el remontaje
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -145,7 +144,7 @@ export default function ProfilesClient({
         setDeleteDialogOpen(false);
         setProfileToDelete(null);
 
-        // ✅ Actualizar estado local
+        // Actualizar estado local
         const newAllProfiles = allProfiles.filter(
           (p) => p.id !== profileToDelete.id,
         );
@@ -159,7 +158,7 @@ export default function ProfilesClient({
         );
 
         if (pageProfiles.length === 0 && currentPage > 1) {
-          // ✅ La key en page.tsx se actualizará porque el total cambió
+          // La key en page.tsx se actualizará porque el total cambió
           router.push(
             `/user/profiles?page=${currentPage - 1}&size=${pageSize}`,
           );

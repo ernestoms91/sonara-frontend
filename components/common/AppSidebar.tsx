@@ -31,7 +31,7 @@ import {
   SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 import { ThemeButtonDynamic } from "./theme-button-dynamic";
-import { logoutAction } from "@/app/actions/auth.action";
+import { logoutAction } from "@/app/actions/auth.actions";
 
 interface UserData {
   id: number;
@@ -104,7 +104,7 @@ const adminItems: NavItem[] = [
 export function AppSidebar({ user }: AppSidebarProps) {
   const pathname = usePathname();
   const [isBoletinesOpen, setIsBoletinesOpen] = useState(() => {
-    return pathname.startsWith("/user/boletines");
+    return pathname.startsWith("/user/boletin"); // ✅ Corregido
   });
   const [isLoggingOut, startLogoutTransition] = useTransition();
 
@@ -125,7 +125,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
   };
 
   const isBoletinesActive = () => {
-    return pathname.startsWith("/user/boletines");
+    return pathname.startsWith("/user/boletin"); // ✅ Corregido
   };
 
   const handleLogout = () => {
@@ -139,7 +139,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
       <SidebarHeader className="border-b border-border px-4 py-5 lg:py-6">
         <div className="flex items-center justify-between">
           <Link
-            href="/user"
+            href="/user/audios"
             className="group flex items-center gap-2 transition-opacity hover:opacity-80 lg:gap-3"
           >
             <Image
