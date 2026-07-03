@@ -5,8 +5,8 @@ import { Plus, User, Users, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { createAudio, createDuetAudio } from "@/app/actions/audio.actions";
-import { getProfiles, type Profile } from "@/app/actions/profile.actions";
-import { AudioFromAPI } from "@/types/api";
+import { getProfiles } from "@/app/actions/profile.actions";
+import { AudioFromAPI, Profile } from "@/types/api";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +29,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
 interface CreateAudioDialogProps {
-  onSuccess?: (newAudio: AudioFromAPI) => void; // ✅ Cambiado para recibir el audio
+  onSuccess?: (newAudio: AudioFromAPI) => void;
 }
 
 type GenerationMode = "single" | "duet";
