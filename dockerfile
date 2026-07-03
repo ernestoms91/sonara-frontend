@@ -1,21 +1,18 @@
-# Dockerfile - Multi-stage build para Sonara Frontend
-# Usa Node.js 24 LTS (Krypton) - la versión LTS más reciente
-
 # ============================================
 # ETAPA 1: Builder
 # ============================================
 FROM node:24-alpine AS builder
 
-# Instalar pnpm (versión estable)
+# Instalar pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Establecer directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos de dependencias
-COPY package.json pnpm-lock.yaml ./
+# Copiar archivos de dependencias (INCLUYE pnpm-workspace.yaml)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Instalar dependencias
+# Instalar dependencias - AHORA SÍ FUNCIONA
 RUN pnpm install --frozen-lockfile
 
 # Copiar el resto del código fuente
@@ -35,7 +32,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # Establecer directorio de trabajo
 WORKDIR /app
 
-# Crear usuario no-root para seguridad
+# Crear usuario no-root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
@@ -44,8 +41,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder --chown=nextjs:nodejs /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
-# Copiar node_modules solo con dependencias de producción
+# Copiar node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Cambiar al usuario no-root
