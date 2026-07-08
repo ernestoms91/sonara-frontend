@@ -196,9 +196,6 @@ export function SeleccionarAudiosBoletinClient({
         <div className="text-center px-4">
           <FileText className="size-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">No tienes audios aún</p>
-          <Button asChild>
-            <Link href="/user/audios/crear">Crear primer audio</Link>
-          </Button>
         </div>
       </div>
     );

@@ -37,7 +37,7 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
   const [totalItems, setTotalItems] = useState(initialData.data?.total || 0);
   const pageSize = initialData.data?.size || 10;
 
-  // ✅ Calcular totalPages dinámicamente
+  // Calcular totalPages dinámicamente
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   const [isPending, startTransition] = useTransition();

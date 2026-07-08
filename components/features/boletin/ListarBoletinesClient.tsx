@@ -113,7 +113,7 @@ export default function ListarBoletinesClient({
         if (result.success) {
           toast.success("Boletín eliminado correctamente");
 
-          // ✅ Actualizar estado local optimistamente
+          // Actualizar estado local optimistamente
           setBoletines((prev) =>
             prev.filter((b) => b.id !== boletinToDelete.id),
           );
@@ -123,13 +123,13 @@ export default function ListarBoletinesClient({
             return newCache;
           });
 
-          // ✅ Si no hay más boletines y estamos en página > 1, ir a la anterior
+          // Si no hay más boletines y estamos en página > 1, ir a la anterior
           if (boletines.length === 1 && currentPage > 1) {
             router.push(
               `/user/boletin/listar?page=${currentPage - 1}&size=${pageSize}`,
             );
           }
-          // ✅ La key en page.tsx forzará el remontaje cuando el total cambie
+          //  La key en page.tsx forzará el remontaje cuando el total cambie
         } else {
           toast.error(result.error || "Error al eliminar el boletín");
         }
@@ -144,7 +144,6 @@ export default function ListarBoletinesClient({
 
   const handlePageChange = (page: number) => {
     router.push(`/user/boletin/listar?page=${page}&size=${pageSize}`);
-    // ✅ No necesitamos router.refresh() aquí, la key en page.tsx forzará el remontaje
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -361,9 +360,6 @@ export default function ListarBoletinesClient({
         <div className="text-center px-4">
           <FileText className="size-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">No tienes boletines aún</p>
-          <Button asChild>
-            <Link href="/user/boletin/crear">Crear primer boletín</Link>
-          </Button>
         </div>
       </div>
     );

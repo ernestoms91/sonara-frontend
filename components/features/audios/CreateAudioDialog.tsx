@@ -351,7 +351,7 @@ export function CreateAudioDialog({ onSuccess }: CreateAudioDialogProps) {
           rows={5}
           maxLength={1000}
           disabled={isLoading}
-          placeholder="Escribe el texto que quieres convertir a voz..."
+          placeholder="Ej: [P1] Hola. [P2] ¿Cómo estás? [P3] Bien. [P4] Genial."
         />
 
         <p className="text-right text-xs text-muted-foreground">
