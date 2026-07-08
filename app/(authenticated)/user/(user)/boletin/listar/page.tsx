@@ -23,7 +23,7 @@ export default async function ListarBoletinesPage({
     throw new Error(result.error || "Error al cargar boletines");
   }
 
-  // ✅ Key que cambia cuando el total o la página cambian
+  //  Key que cambia cuando el total o la página cambian
   const key = `${currentPage}-${pageSize}-${result.data.total}`;
 
   return (
