@@ -153,10 +153,10 @@ export function AudioBoletinCard({
 
   return (
     <Card
-      className={`group hover:shadow-lg transition-all duration-300 overflow-hidden ${
+      className={`group overflow-hidden shadow-sm transition-all duration-300 ${
         isSelected
-          ? "border-primary ring-2 ring-primary/20 shadow-md"
-          : "hover:border-primary/30"
+          ? "bg-primary/[0.03] shadow-md ring-2 ring-primary/40"
+          : "hover:shadow-md hover:ring-primary/25"
       }`}
     >
       <div className="h-1 bg-linear-to-r from-primary/80 via-primary to-primary/80" />

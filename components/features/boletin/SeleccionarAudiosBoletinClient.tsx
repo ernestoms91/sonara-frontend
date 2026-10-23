@@ -190,110 +190,128 @@ export function SeleccionarAudiosBoletinClient({
     filteredAudios.length > 0 &&
     filteredAudios.every((a) => selectedAudios.has(a.id));
 
-  if (audios.length === 0 && !initialData.data?.items?.length) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center px-4">
-          <FileText className="size-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">No tienes audios aún</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="flex h-full flex-col">
-        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md px-3 py-2 sm:px-4 sm:py-3 md:px-6 lg:px-8">
-          <div className="flex flex-col gap-2 sm:gap-3">
-            <div className="flex items-center justify-between gap-2">
-              <h1 className="text-lg font-bold sm:text-xl md:text-2xl">
-                Crear Boletín
-              </h1>
+      <div className="flex flex-1 flex-col">
+        <header className="sticky top-16 z-20 border-b border-border/70 bg-background/80 backdrop-blur-xl md:top-0">
+          <div className="px-4 py-3 md:px-6 lg:px-8">
+            <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 sm:gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                    Producción
+                  </p>
+                  <h1 className="mt-0.5 text-lg font-semibold sm:text-xl md:text-2xl">
+                    Crear boletín
+                  </h1>
+                </div>
 
-              <div className="relative flex-1 max-w-sm hidden sm:block">
-                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar audios..."
-                  value={searchQuery}
-                  onChange={handleSearch}
-                  className="pl-9"
-                />
-              </div>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="sm:hidden"
-                onClick={() => setShowMobileSearch(!showMobileSearch)}
-              >
-                <Search className="size-4" />
-              </Button>
-            </div>
-
-            {showMobileSearch && (
-              <div className="relative w-full sm:hidden">
-                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar audios..."
-                  value={searchQuery}
-                  onChange={handleSearch}
-                  className="pl-9"
-                  autoFocus
-                />
-              </div>
-            )}
-
-            {filteredAudios.length > 0 && (
-              <div className="flex items-center justify-between gap-2 py-2 border-t pt-2 sm:pt-3">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <Checkbox
-                    checked={isAllSelected}
-                    onCheckedChange={(checked) => {
-                      if (checked) selectAll();
-                      else deselectAll();
-                    }}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                <div className="relative hidden max-w-sm flex-1 sm:block">
+                  <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar audios…"
+                    value={searchQuery}
+                    onChange={handleSearch}
+                    className="h-9 bg-card pl-9"
                   />
-                  <span className="text-xs sm:text-sm text-muted-foreground">
-                    {selectedAudios.size} seleccionado
-                    {selectedAudios.size !== 1 ? "s" : ""}
-                  </span>
-                  {selectedAudios.size > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="text-xs bg-primary/10 text-primary"
-                    >
-                      Máx 30
-                    </Badge>
-                  )}
                 </div>
 
                 <Button
-                  size="sm"
-                  onClick={handleCreateClick}
-                  disabled={selectedAudios.size !== 30}
-                  className="gap-1 sm:gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm"
+                  variant="outline"
+                  size="icon"
+                  className="size-9 sm:hidden"
+                  onClick={() => setShowMobileSearch(!showMobileSearch)}
+                  aria-label="Buscar audios"
                 >
-                  <ArrowRight className="size-3 sm:size-4" />
-                  <span className="hidden sm:inline">Crear boletín</span>
-                  <span className="sm:hidden">({selectedAudios.size}/30)</span>
+                  <Search className="size-4" />
                 </Button>
               </div>
-            )}
+
+              {showMobileSearch && (
+                <div className="relative w-full sm:hidden">
+                  <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar audios…"
+                    value={searchQuery}
+                    onChange={handleSearch}
+                    className="h-9 bg-card pl-9"
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              {filteredAudios.length > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-card/60 px-3 py-2">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={(checked) => {
+                        if (checked) selectAll();
+                        else deselectAll();
+                      }}
+                      className="data-[state=checked]:border-primary data-[state=checked]:bg-primary"
+                    />
+                    <span className="text-xs text-muted-foreground sm:text-sm">
+                      {selectedAudios.size} seleccionado
+                      {selectedAudios.size !== 1 ? "s" : ""}
+                    </span>
+                    {selectedAudios.size > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="border border-primary/15 bg-primary/10 text-xs text-primary"
+                      >
+                        Máx. 30
+                      </Badge>
+                    )}
+                  </div>
+
+                  <Button
+                    size="sm"
+                    onClick={handleCreateClick}
+                    disabled={selectedAudios.size === 0}
+                    className="h-8 gap-1.5 px-3 text-xs sm:text-sm"
+                  >
+                    <ArrowRight className="size-3.5 sm:size-4" />
+                    <span className="hidden sm:inline">Crear boletín</span>
+                    <span className="sm:hidden">({selectedAudios.size}/30)</span>
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-2 sm:p-4 md:p-6 lg:p-8">
-          <div className="mx-auto max-w-5xl space-y-3 sm:space-y-4">
-            {filteredAudios.map((audio) => (
-              <AudioBoletinCard
-                key={audio.id}
-                audio={audio}
-                isSelected={selectedAudios.has(audio.id)}
-                onToggleSelect={toggleSelection}
-              />
-            ))}
+        <div className="flex-1 px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8">
+          <div className="mx-auto w-full max-w-5xl space-y-3 sm:space-y-4">
+            {filteredAudios.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/60 px-6 py-16 text-center">
+                <div className="flex size-12 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+                  <FileText className="size-6 text-primary" />
+                </div>
+                <h2 className="mt-4 text-lg font-semibold text-foreground">
+                  {searchQuery
+                    ? "No se encontraron audios"
+                    : "Aún no tienes audios"}
+                </h2>
+                <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                  {searchQuery
+                    ? `No hay resultados para “${searchQuery}”.`
+                    : "Genera audios primero para poder armar un boletín."}
+                </p>
+                <Button asChild variant="outline" size="sm" className="mt-6 h-9">
+                  <Link href="/user/audios">Ir a mis audios</Link>
+                </Button>
+              </div>
+            ) : (
+              filteredAudios.map((audio) => (
+                <AudioBoletinCard
+                  key={audio.id}
+                  audio={audio}
+                  isSelected={selectedAudios.has(audio.id)}
+                  onToggleSelect={toggleSelection}
+                />
+              ))
+            )}
 
             {hasMore && (
               <div

@@ -18,6 +18,20 @@ const loginSchema = z.object({
   password: z.string().min(1, "La contraseña es requerida"),
 });
 
+/**
+ * Las cookies `Secure` solo viajan por HTTPS. En producción con HTTPS deben
+ * estar activas; si el despliegue es HTTP (por ejemplo, red interna), hay que
+ * desactivarlas explícitamente con COOKIE_SECURE=false.
+ *
+ * - NODE_ENV=development  -> false por defecto
+ * - NODE_ENV=production   -> true por defecto (seguro)
+ * - COOKIE_SECURE=false   -> fuerza false (para producción sin HTTPS)
+ */
+const secureCookies =
+  process.env.COOKIE_SECURE === "true" ||
+  (process.env.COOKIE_SECURE !== "false" &&
+    process.env.NODE_ENV === "production");
+
 // ============================================
 // LOGIN - Iniciar sesión
 // ============================================
@@ -64,7 +78,7 @@ export async function loginAction(prevState: LoginState, formData: FormData) {
 
   cookieStore.set("access_token", result.data.access_token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: secureCookies,
     sameSite: "lax",
     maxAge: Number(process.env.JWT_EXPIRES_MIN) * 60 || 60 * 15,
     path: "/",
@@ -72,7 +86,7 @@ export async function loginAction(prevState: LoginState, formData: FormData) {
 
   cookieStore.set("refresh_token", result.data.refresh_token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: secureCookies,
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 30,
     path: "/",

@@ -104,7 +104,7 @@ const adminItems: NavItem[] = [
 export function AppSidebar({ user }: AppSidebarProps) {
   const pathname = usePathname();
   const [isBoletinesOpen, setIsBoletinesOpen] = useState(() => {
-    return pathname.startsWith("/user/boletin"); // ✅ Corregido
+    return pathname.startsWith("/user/boletin");
   });
   const [isLoggingOut, startLogoutTransition] = useTransition();
 
@@ -125,7 +125,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
   };
 
   const isBoletinesActive = () => {
-    return pathname.startsWith("/user/boletin"); // ✅ Corregido
+    return pathname.startsWith("/user/boletin");
   };
 
   const handleLogout = () => {
@@ -135,127 +135,136 @@ export function AppSidebar({ user }: AppSidebarProps) {
   };
 
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b border-border px-4 py-5 lg:py-6">
-        <div className="flex items-center justify-between">
+    <Sidebar className="border-r border-sidebar-border">
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-5 group-data-[collapsible=icon]:px-2 lg:py-6">
+        <div className="flex items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center">
           <Link
             href="/user/audios"
-            className="group flex items-center gap-2 transition-opacity hover:opacity-80 lg:gap-3"
+            className="group flex items-center gap-2.5 transition-opacity hover:opacity-80"
           >
-            <Image
-              src="/screen.png"
-              alt="Sonara Logo"
-              width={32}
-              height={32}
-              priority
-              className="h-9 w-auto dark:invert lg:h-10"
-            />
-            <span className="text-xl font-bold tracking-tight text-primary lg:text-2xl">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-sidebar-border bg-card shadow-sm">
+              <Image
+                src="/screen.png"
+                alt="Sonara"
+                width={28}
+                height={28}
+                priority
+                className="size-6 w-auto dark:invert"
+              />
+            </span>
+            <span className="text-lg font-semibold tracking-tight text-foreground group-data-[collapsible=icon]:hidden">
               Sonara
             </span>
           </Link>
 
-          <ThemeButtonDynamic />
+          <div className="group-data-[collapsible=icon]:hidden">
+            <ThemeButtonDynamic />
+          </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="py-4 lg:py-6">
-        <SidebarMenu className="space-y-1 lg:space-y-2">
-          {navItems.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                asChild
-                isActive={isItemActive(item.url)}
-                tooltip={item.title}
-                className="px-3 py-2 text-sm lg:px-4 lg:py-2.5 lg:text-base"
-              >
-                <Link
-                  href={item.url}
-                  className="flex items-center gap-3 lg:gap-4"
+      <SidebarContent className="gap-0 overflow-x-hidden px-2 py-4 lg:py-5">
+        <div className="pb-5">
+          <p className="px-3 pb-2 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/70 group-data-[collapsible=icon]:hidden">
+            Contenido
+          </p>
+
+          <SidebarMenu className="gap-1">
+            {navItems.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isItemActive(item.url)}
+                  tooltip={item.title}
+                  className="h-9 px-3 text-sm"
                 >
-                  <item.icon className="size-5 shrink-0" />
-                  <span className="truncate font-medium">{item.title}</span>
-                </Link>
+                  <Link href={item.url} className="flex items-center gap-3">
+                    <item.icon className="size-4.5 shrink-0" />
+                    <span className="truncate font-medium">{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setIsBoletinesOpen(!isBoletinesOpen)}
+                isActive={isBoletinesActive()}
+                tooltip="Boletines"
+                className="h-9 px-3 text-sm"
+              >
+                <Newspaper className="size-4.5 shrink-0" />
+                <span className="flex-1 truncate text-left font-medium">
+                  Boletines
+                </span>
+                <span className="group-data-[collapsible=icon]:hidden">
+                  {isBoletinesOpen ? (
+                    <ChevronDown className="size-4" />
+                  ) : (
+                    <ChevronRight className="size-4" />
+                  )}
+                </span>
               </SidebarMenuButton>
+
+              {isBoletinesOpen && (
+                <SidebarMenuSub className="my-1 gap-0.5 py-1">
+                  {boletinesGroup.subItems.map((subItem) => (
+                    <SidebarMenuSubItem key={subItem.title}>
+                      <SidebarMenuSubButton
+                        asChild
+                        isActive={pathname === subItem.url}
+                        className="h-8 pl-3"
+                      >
+                        <Link href={subItem.url}>
+                          <span>{subItem.title}</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  ))}
+                </SidebarMenuSub>
+              )}
             </SidebarMenuItem>
-          ))}
+          </SidebarMenu>
+        </div>
 
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => setIsBoletinesOpen(!isBoletinesOpen)}
-              isActive={isBoletinesActive()}
-              className="px-3 py-2 text-sm lg:px-4 lg:py-2.5 lg:text-base"
-            >
-              <div className="flex w-full items-center justify-between">
-                <div className="flex items-center gap-3 lg:gap-4">
-                  <Newspaper className="size-5 shrink-0" />
-                  <span className="truncate font-medium">Boletines</span>
-                </div>
-                {isBoletinesOpen ? (
-                  <ChevronDown className="size-4 shrink-0" />
-                ) : (
-                  <ChevronRight className="size-4 shrink-0" />
-                )}
-              </div>
-            </SidebarMenuButton>
+        {isAdmin && (
+          <div className="border-t border-sidebar-border pt-4">
+            <p className="px-3 pb-2 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/70 group-data-[collapsible=icon]:hidden">
+              Administración
+            </p>
 
-            {isBoletinesOpen && (
-              <SidebarMenuSub>
-                {boletinesGroup.subItems.map((subItem) => (
-                  <SidebarMenuSubItem key={subItem.title}>
-                    <SidebarMenuSubButton
-                      asChild
-                      isActive={pathname === subItem.url}
-                      className="pl-11 lg:pl-12"
-                    >
-                      <Link href={subItem.url}>
-                        <span>{subItem.title}</span>
-                      </Link>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                ))}
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
-
-          {isAdmin && (
-            <>
-              <div className="my-2 border-t border-border" />
-
+            <SidebarMenu className="gap-1">
               {adminItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
                     isActive={isItemActive(item.url)}
                     tooltip={item.title}
-                    className="px-3 py-2 text-sm lg:px-4 lg:py-2.5 lg:text-base"
+                    className="h-9 px-3 text-sm"
                   >
-                    <Link
-                      href={item.url}
-                      className="flex items-center gap-3 lg:gap-4"
-                    >
-                      <item.icon className="size-5 shrink-0" />
+                    <Link href={item.url} className="flex items-center gap-3">
+                      <item.icon className="size-4.5 shrink-0" />
                       <span className="truncate font-medium">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-            </>
-          )}
-        </SidebarMenu>
+            </SidebarMenu>
+          </div>
+        )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border p-4 lg:p-5">
-        <div className="flex items-center gap-3 overflow-hidden lg:gap-4">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary lg:size-10 lg:text-sm">
+      <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:p-2 lg:p-4">
+        <div className="flex items-center gap-3 overflow-hidden group-data-[collapsible=icon]:justify-center">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20">
             {initials}
           </div>
 
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground lg:text-base">
+          <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+            <p className="truncate text-sm font-medium text-foreground">
               {displayName}
             </p>
-            <p className="truncate text-xs text-muted-foreground lg:text-sm">
+            <p className="truncate text-xs text-muted-foreground">
               {displayPlan}
             </p>
           </div>
@@ -265,12 +274,13 @@ export function AppSidebar({ user }: AppSidebarProps) {
             onClick={handleLogout}
             disabled={isLoggingOut}
             aria-label="Cerrar sesión"
-            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 lg:p-2.5"
+            title="Cerrar sesión"
+            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50 group-data-[collapsible=icon]:hidden"
           >
             {isLoggingOut ? (
-              <div className="size-4 lg:size-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+              <div className="size-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
             ) : (
-              <LogOut className="size-4 lg:size-5" />
+              <LogOut className="size-4" />
             )}
           </button>
         </div>

@@ -7,10 +7,18 @@ export default function PublicLayout({
   children: React.ReactNode;
 }) {
   return (
-    // ← Te faltaba este return
-    <div className="min-h-screen bg-background">
+    <div className="relative isolate flex min-h-svh flex-col overflow-x-clip bg-background">
+      {/* Fondo ambiental del sitio: brillo dorado + retícula sutil */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[46rem] overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-ambient" />
+        <div className="absolute inset-0 bg-grid opacity-70 [mask-image:radial-gradient(ellipse_70%_58%_at_50%_0%,black,transparent_78%)]" />
+      </div>
+
       <Navbar />
-      <main className="container mx-auto p-4">{children}</main>
+      <main className="flex flex-1 flex-col pt-16 lg:pt-20">{children}</main>
       <Footer />
     </div>
   );

@@ -178,7 +178,7 @@ export function CreateUserDialog({ onSuccess }: CreateUserDialogProps) {
                 <p className="text-xs text-destructive">{errors.username}</p>
               )}
               {username && !errors.username && usernameValidation.isValid && (
-                <p className="text-xs text-emerald-500">✓ Usuario válido</p>
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">✓ Usuario válido</p>
               )}
             </div>
 
@@ -197,7 +197,7 @@ export function CreateUserDialog({ onSuccess }: CreateUserDialogProps) {
                 <p className="text-xs text-destructive">{errors.email}</p>
               )}
               {email && !errors.email && emailValidation.isValid && (
-                <p className="text-xs text-emerald-500">✓ Email válido</p>
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">✓ Email válido</p>
               )}
             </div>
 
@@ -215,7 +215,7 @@ export function CreateUserDialog({ onSuccess }: CreateUserDialogProps) {
                 <p className="text-xs text-destructive">{errors.full_name}</p>
               )}
               {fullName && !errors.full_name && fullNameValidation.isValid && (
-                <p className="text-xs text-emerald-500">✓ Nombre válido</p>
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">✓ Nombre válido</p>
               )}
             </div>
 
@@ -267,7 +267,7 @@ export function CreateUserDialog({ onSuccess }: CreateUserDialogProps) {
                         key={req.label}
                         className={`flex items-center gap-1.5 ${
                           req.check
-                            ? "text-emerald-500"
+                            ? "text-emerald-700 dark:text-emerald-400"
                             : "text-muted-foreground"
                         }`}
                       >

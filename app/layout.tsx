@@ -1,22 +1,34 @@
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ui/theme-provider";
-import { TooltipProvider } from "@/components/ui/tooltip"; // ← Agregar
-import { Toaster } from "@/components/ui/sonner"; // ← Agregar
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const geistSans = Geist({
-  variable: "--font-sans",
+  variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-mono",
+  variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
-export const metadata = {
-  title: "Sonara Front",
-  description: "Aplicación de generacion de voz ",
+export const metadata: Metadata = {
+  title: {
+    default: "Sonara · Voz IA para radio",
+    template: "%s · Sonara",
+  },
+  description:
+    "Clona voces, genera locuciones y produce boletines con IA para tu emisora.",
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf9f6" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0b" },
+  ],
 };
 
 export default function RootLayout({
@@ -27,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-svh bg-background font-sans antialiased`}
       >
         <ThemeProvider
           attribute="class"

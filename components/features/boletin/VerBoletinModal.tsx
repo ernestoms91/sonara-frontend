@@ -67,7 +67,7 @@ export function VerBoletinModal({
 
   const getStatusBadge = (active: boolean) => {
     return active ? (
-      <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+      <Badge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
         Activo
       </Badge>
     ) : (

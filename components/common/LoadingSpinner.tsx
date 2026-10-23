@@ -23,16 +23,23 @@ export function LoadingSpinner({
   size = "md",
 }: LoadingSpinnerProps) {
   return (
-    <div className={cn("flex h-full items-center justify-center", className)}>
+    <div
+      className={cn(
+        "flex min-h-[60vh] items-center justify-center",
+        className,
+      )}
+    >
       <div className="text-center">
         <div
           className={cn(
-            "animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4",
+            "mx-auto mb-4 animate-spin rounded-full border-[3px] border-primary border-t-transparent",
             sizeClasses[size],
             spinnerClassName,
           )}
         />
-        <p className={cn("text-muted-foreground", textClassName)}>{text}</p>
+        <p className={cn("text-sm text-muted-foreground", textClassName)}>
+          {text}
+        </p>
       </div>
     </div>
   );

@@ -24,9 +24,9 @@ export default async function DashboardLayout({
     <SidebarProvider>
       <AppSidebar user={user} />
 
-      <div className="flex flex-1 flex-col">
+      <div className="relative flex min-h-svh flex-1 flex-col overflow-x-clip bg-background bg-ambient">
         <MobileNavbar />
-        <main className="flex-1 p-4 pt-6 md:pt-6">{children}</main>
+        <main className="flex min-h-0 flex-1 flex-col">{children}</main>
       </div>
     </SidebarProvider>
   );

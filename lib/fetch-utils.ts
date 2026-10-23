@@ -3,6 +3,7 @@
 
 import { cookies } from "next/headers";
 import { ActionResponse } from "@/types/api";
+import { normalizeMediaUrls } from "@/lib/media-url";
 
 const BACKEND_URL = process.env.BACKEND_URL;
 
@@ -66,7 +67,7 @@ export async function fetchWithoutAuth<T>(
       };
     }
 
-    const responseData = await response.json();
+    const responseData = normalizeMediaUrls(await response.json());
 
     if (responseData.ok !== undefined && responseData.data !== undefined) {
       return {
@@ -143,7 +144,7 @@ export async function fetchWithAuth<T>(
       };
     }
 
-    const responseData = await response.json();
+    const responseData = normalizeMediaUrls(await response.json());
 
     if (responseData.ok !== undefined && responseData.data !== undefined) {
       return {
@@ -219,7 +220,7 @@ export async function fetchWithAuthFormData<T>(
       };
     }
 
-    const responseData = await response.json();
+    const responseData = normalizeMediaUrls(await response.json());
 
     if (responseData.ok !== undefined && responseData.data !== undefined) {
       return {

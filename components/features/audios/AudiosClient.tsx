@@ -3,7 +3,7 @@
 
 import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { AudioLines, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AudioCard } from "@/components/features/audios/AudioCard";
 import { CreateAudioDialog } from "@/components/features/audios/CreateAudioDialog";
@@ -127,76 +127,95 @@ export function AudiosClient({ initialData, currentPage }: AudiosClientProps) {
 
   if (isPending) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="size-8 animate-spin rounded-full border-[3px] border-primary border-t-transparent" />
       </div>
     );
   }
 
-  if (totalItems === 0) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">No tienes audios aún</p>
-          <CreateAudioDialog onSuccess={handleAudioCreated} />
-        </div>
-      </div>
-    );
-  }
+  const isEmpty = totalItems === 0;
 
   return (
     <>
-      <div className="flex h-full flex-col">
+      <div className="flex flex-1 flex-col">
         {/* Header */}
-        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md px-4 py-3 md:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <h1 className="text-xl font-bold md:text-2xl">Mis Audios</h1>
+        <header className="sticky top-16 z-20 border-b border-border/70 bg-background/80 backdrop-blur-xl md:top-0">
+          <div className="mx-auto w-full max-w-5xl px-4 py-3 md:px-6 lg:px-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                  Biblioteca
+                </p>
+                <h1 className="mt-0.5 text-xl font-semibold text-foreground md:text-2xl">
+                  Mis audios
+                </h1>
+              </div>
 
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar audios..."
-                value={searchQuery}
-                onChange={handleSearch}
-                className="pl-9"
-              />
+              <div className="flex w-full items-center gap-2 sm:w-auto">
+                <div className="relative flex-1 sm:w-64 lg:w-72">
+                  <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por texto…"
+                    value={searchQuery}
+                    onChange={handleSearch}
+                    className="h-9 bg-card pl-9"
+                  />
+                </div>
+                <CreateAudioDialog onSuccess={handleAudioCreated} />
+              </div>
             </div>
-
-            <CreateAudioDialog onSuccess={handleAudioCreated} />
           </div>
         </header>
 
         {/* Lista de audios */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          <div className="mx-auto max-w-5xl space-y-3">
-            {filteredAudios.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  {searchQuery
-                    ? "No se encontraron resultados"
-                    : "No hay audios"}
+        <div className="flex-1 p-4 md:p-6 lg:p-8">
+          <div className="mx-auto w-full max-w-5xl">
+            {isEmpty ? (
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/60 px-6 py-16 text-center">
+                <div className="flex size-12 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+                  <AudioLines className="size-6 text-primary" />
+                </div>
+                <h2 className="mt-4 text-lg font-semibold text-foreground">
+                  Aún no tienes audios
+                </h2>
+                <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                  Genera tu primera locución con una de las voces disponibles y
+                  aparecerá aquí.
                 </p>
+                <div className="mt-6">
+                  <CreateAudioDialog onSuccess={handleAudioCreated} />
+                </div>
               </div>
             ) : (
-              filteredAudios.map((audio) => (
-                <AudioCard
-                  key={audio.id}
-                  audio={audio}
-                  onDelete={() => handleDeleteClick(audio.id, audio.text)}
-                />
-              ))
+              <div className="space-y-3">
+                {filteredAudios.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border bg-card/60 px-6 py-14 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      No se encontraron audios para “{searchQuery}”.
+                    </p>
+                  </div>
+                ) : (
+                  filteredAudios.map((audio) => (
+                    <AudioCard
+                      key={audio.id}
+                      audio={audio}
+                      onDelete={() => handleDeleteClick(audio.id, audio.text)}
+                    />
+                  ))
+                )}
+              </div>
             )}
+
+            {/* Paginación */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemLabel="audio"
+              onPageChange={handlePageChange}
+            />
           </div>
         </div>
-
-        {/* Paginación */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemLabel="audio"
-          onPageChange={handlePageChange}
-        />
       </div>
 
       <ConfirmDialog

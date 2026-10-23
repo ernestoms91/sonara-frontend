@@ -1,8 +1,17 @@
 // proxy.ts
 import { NextResponse, type NextRequest } from "next/server";
 
-const BACKEND_URL = process.env.BACKEND_URL;
+const BACKEND_URL = process.env.BACKEND_URL?.replace(/\/+$/, "");
 const EXPIRY_MARGIN_MINUTES = 5;
+
+/**
+ * Mismo criterio que app/actions/auth.actions.ts para que el refresh no rompa
+ * la sesión en despliegues HTTP internos.
+ */
+const secureCookies =
+  process.env.COOKIE_SECURE === "true" ||
+  (process.env.COOKIE_SECURE !== "false" &&
+    process.env.NODE_ENV === "production");
 
 function isExpiredOrExpiringSoon(token: string): boolean {
   try {
@@ -79,7 +88,7 @@ export async function proxy(request: NextRequest) {
     //    reciba el Set-Cookie y lo guarde para próximas peticiones.
     response.cookies.set("access_token", newAccessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: secureCookies,
       sameSite: "lax",
       maxAge: Number(process.env.JWT_EXPIRES_MIN) * 60 || 60 * 15,
       path: "/",

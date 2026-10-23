@@ -128,8 +128,10 @@ export function AudioCard({
 
   return (
     <div
-      className={`group rounded-xl border border-border bg-card p-3 transition-all hover:border-primary/30 hover:shadow-md sm:p-4 ${
-        isSelected ? "border-primary bg-primary/5" : ""
+      className={`group rounded-xl border border-border bg-card p-3.5 shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md sm:p-4 ${
+        isSelected
+          ? "border-primary/60 bg-primary/[0.04] ring-1 ring-primary/20"
+          : ""
       }`}
     >
       <div className="flex flex-col gap-3 sm:gap-4">
@@ -140,26 +142,27 @@ export function AudioCard({
                 type="checkbox"
                 checked={isSelected}
                 onChange={() => onToggleSelect(audio.id)}
-                className="size-4 rounded border-border text-primary focus:ring-primary"
+                aria-label="Seleccionar audio"
+                className="size-4 rounded border-input text-primary accent-primary focus:ring-2 focus:ring-primary/40"
               />
             )}
-            <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-mono text-primary">
+            <span className="rounded-md border border-primary/15 bg-primary/10 px-2 py-0.5 font-mono text-[11px] text-primary">
               #{audio.id.toString().slice(-4)}
             </span>
             <span className="text-xs text-muted-foreground">
               Voz:{" "}
-              <span className="font-semibold text-foreground">
+              <span className="font-medium text-foreground">
                 {audio.profile_name || "Desconocida"}
               </span>
               {audio.secondary_profile_name && (
-                <span className="font-semibold text-foreground">
+                <span className="font-medium text-foreground">
                   {" / "}
                   {audio.secondary_profile_name}
                 </span>
               )}
             </span>
           </div>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-[11px] text-muted-foreground">
             {new Date(audio.created_at).toLocaleDateString()}
           </span>
         </div>
@@ -194,20 +197,21 @@ export function AudioCard({
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-3">
           <div className="flex items-center gap-3">
             <button
               onClick={handlePlayPause}
-              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105"
+              aria-label={isPlaying ? "Pausar audio" : "Reproducir audio"}
+              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               {isPlaying ? (
                 <Pause className="size-4 fill-primary-foreground" />
               ) : (
-                <Play className="size-4 fill-primary-foreground" />
+                <Play className="ml-0.5 size-4 fill-primary-foreground" />
               )}
             </button>
 
-            <span className="text-xs font-mono text-muted-foreground">
+            <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
               {formatTime(currentTime)} / {formatTime(durationSeconds)}
             </span>
           </div>
@@ -215,13 +219,17 @@ export function AudioCard({
           <div className="flex items-center gap-1">
             <button
               onClick={handleDownload}
-              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label="Descargar audio"
+              title="Descargar audio"
+              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               <Download className="size-4" />
             </button>
             <button
               onClick={() => onDelete(audio)}
-              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              aria-label="Eliminar audio"
+              title="Eliminar audio"
+              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
             >
               <Trash2 className="size-4" />
             </button>

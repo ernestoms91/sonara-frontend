@@ -175,7 +175,7 @@ export default function ProfilesClient({
 
   const getStatusBadge = (active: boolean) => {
     return active ? (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
         <span className="size-1.5 rounded-full bg-emerald-500" />
         Activo
       </span>
@@ -187,15 +187,41 @@ export default function ProfilesClient({
     );
   };
 
+  const pageHeader = (
+    <header className="sticky top-16 z-20 border-b border-border/70 bg-background/80 backdrop-blur-xl md:top-0">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6 lg:px-8">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Administración
+          </p>
+          <h1 className="mt-0.5 text-xl font-semibold text-foreground sm:text-2xl">
+            Perfiles de voz
+          </h1>
+        </div>
+        <CreateProfileDialog onSuccess={handleProfileCreated} />
+      </div>
+    </header>
+  );
+
   if (totalItems === 0) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center px-4">
-          <User className="size-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">
-            No hay perfiles disponibles
-          </p>
-          <CreateProfileDialog onSuccess={handleProfileCreated} />
+      <div className="flex flex-1 flex-col">
+        {pageHeader}
+        <div className="flex flex-1 items-center justify-center p-6">
+          <div className="flex max-w-md flex-col items-center rounded-2xl border border-dashed border-border bg-card/60 px-6 py-16 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+              <User className="size-6 text-primary" />
+            </div>
+            <h2 className="mt-4 text-lg font-semibold text-foreground">
+              No hay perfiles disponibles
+            </h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              Crea un perfil de voz para empezar a generar locuciones.
+            </p>
+            <div className="mt-6">
+              <CreateProfileDialog onSuccess={handleProfileCreated} />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -203,47 +229,40 @@ export default function ProfilesClient({
 
   return (
     <>
-      <div className="flex h-full flex-col">
-        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md px-3 py-2 sm:px-4 sm:py-3 md:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <h1 className="text-base font-bold sm:text-xl md:text-2xl">
-              Perfiles de Voz
-            </h1>
-            <CreateProfileDialog onSuccess={handleProfileCreated} />
-          </div>
-        </header>
+      <div className="flex flex-1 flex-col">
+        {pageHeader}
 
-        <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-6 lg:p-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="hidden lg:block glass-panel rounded-2xl overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm">
+        <div className="flex-1 p-4 md:p-6 lg:p-8">
+          <div className="mx-auto w-full max-w-7xl">
+            <div className="hidden overflow-hidden rounded-2xl border border-border bg-card shadow-sm lg:block">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-border/50 bg-muted/30">
-                      <th className="px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                    <tr className="border-b border-border bg-muted/40">
+                      <th className="px-4 py-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         ID
                       </th>
-                      <th className="px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                      <th className="px-4 py-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Nombre
                       </th>
-                      <th className="px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                      <th className="px-4 py-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Idioma
                       </th>
-                      <th className="px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                      <th className="px-4 py-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Modelo
                       </th>
-                      <th className="px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-widest text-center">
+                      <th className="px-4 py-3 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Estado
                       </th>
-                      <th className="px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-widest text-right">
+                      <th className="px-4 py-3 text-right text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Acciones
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/30">
+                  <tbody className="divide-y divide-border/60">
                     {profiles.map((profile: Profile) => (
                       <React.Fragment key={profile.id}>
-                        <tr className="hover:bg-muted/20 transition-colors group">
+                        <tr className="group transition-colors hover:bg-muted/40">
                           <td className="px-4 py-4">
                             <span className="font-mono text-sm text-primary bg-primary/10 px-2 py-1 rounded">
                               #{String(profile.id).padStart(3, "0")}
@@ -320,19 +339,19 @@ export default function ProfilesClient({
                                   </span>
                                   <div className="flex flex-wrap gap-2">
                                     {profile.connectors_ready && (
-                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
                                         <CheckCircle className="size-3" />
                                         Conectores
                                       </span>
                                     )}
                                     {profile.hours_ready && (
-                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                                      <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-400">
                                         <CheckCircle className="size-3" />
                                         Horas
                                       </span>
                                     )}
                                     {profile.minutes_ready && (
-                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                                      <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 text-xs font-medium text-purple-700 dark:text-purple-400">
                                         <CheckCircle className="size-3" />
                                         Minutos
                                       </span>
@@ -375,7 +394,7 @@ export default function ProfilesClient({
               {profiles.map((profile) => (
                 <div
                   key={profile.id}
-                  className="glass-panel rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-3 sm:p-4 hover:border-primary/20 transition-colors"
+                  className="rounded-xl border border-border bg-card p-3 shadow-sm transition-colors hover:border-primary/30 sm:p-4"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -444,19 +463,19 @@ export default function ProfilesClient({
 
                   <div className="mt-2 flex items-center gap-2 flex-wrap">
                     {profile.connectors_ready && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
                         <CheckCircle className="size-3" />
                         Conectores
                       </span>
                     )}
                     {profile.hours_ready && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-400">
                         <CheckCircle className="size-3" />
                         Horas
                       </span>
                     )}
                     {profile.minutes_ready && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 text-xs font-medium text-purple-700 dark:text-purple-400">
                         <CheckCircle className="size-3" />
                         Minutos
                       </span>

@@ -334,7 +334,7 @@ export default function ListarBoletinesClient({
 
   const getStatusBadge = (active: boolean) => {
     return active ? (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
         <span className="size-1.5 rounded-full bg-emerald-500" />
         Activo
       </span>
@@ -346,20 +346,58 @@ export default function ListarBoletinesClient({
     );
   };
 
+  const pageHeader = (
+    <header className="sticky top-16 z-20 border-b border-border/70 bg-background/80 backdrop-blur-xl md:top-0">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6 lg:px-8">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Producción
+          </p>
+          <h1 className="mt-0.5 text-xl font-semibold text-foreground sm:text-2xl">
+            Boletines
+          </h1>
+        </div>
+
+        <Button asChild size="sm" className="h-9 w-fit gap-1.5 px-3.5">
+          <Link href="/user/boletin/crear">
+            <FileText className="size-4" />
+            Nuevo boletín
+          </Link>
+        </Button>
+      </div>
+    </header>
+  );
+
   if (isPending) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="size-8 animate-spin rounded-full border-[3px] border-primary border-t-transparent" />
       </div>
     );
   }
 
   if (total === 0) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center px-4">
-          <FileText className="size-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">No tienes boletines aún</p>
+      <div className="flex flex-1 flex-col">
+        {pageHeader}
+        <div className="flex flex-1 items-center justify-center p-6">
+          <div className="flex max-w-md flex-col items-center rounded-2xl border border-dashed border-border bg-card/60 px-6 py-16 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+              <FileText className="size-6 text-primary" />
+            </div>
+            <h2 className="mt-4 text-lg font-semibold text-foreground">
+              Aún no tienes boletines
+            </h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              Combina tus audios en un boletín y prográmalo para tu emisora.
+            </p>
+            <Button asChild size="sm" className="mt-6 h-9 gap-1.5 px-3.5">
+              <Link href="/user/boletin/crear">
+                <FileText className="size-4" />
+                Crear boletín
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -367,55 +405,41 @@ export default function ListarBoletinesClient({
 
   return (
     <>
-      <div className="flex h-full flex-col">
-        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md px-3 py-2 sm:px-4 sm:py-3 md:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <h1 className="text-base font-bold sm:text-xl md:text-2xl">
-              Mis Boletines
-            </h1>
+      <div className="flex flex-1 flex-col">
+        {pageHeader}
 
-            <Button asChild size="sm" className="gap-1 text-xs sm:text-sm">
-              <Link href="/user/boletin/crear">
-                <FileText className="size-3 sm:size-4" />
-                <span className="hidden sm:inline">Nuevo Boletín</span>
-                <span className="sm:hidden">Nuevo</span>
-              </Link>
-            </Button>
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-6 lg:p-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="hidden lg:block glass-panel rounded-2xl overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm">
+        <div className="flex-1 p-4 md:p-6 lg:p-8">
+          <div className="mx-auto w-full max-w-7xl">
+            <div className="hidden overflow-hidden rounded-2xl border border-border bg-card shadow-sm lg:block">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-border/50 bg-muted/30">
-                      <th className="px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                    <tr className="border-b border-border bg-muted/40">
+                      <th className="px-4 py-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         ID
                       </th>
-                      <th className="px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                      <th className="px-4 py-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Fecha / Hora
                       </th>
-                      <th className="px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                      <th className="px-4 py-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Creador
                       </th>
-                      <th className="px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-widest text-center">
+                      <th className="px-4 py-3 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Contenido
                       </th>
-                      <th className="px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-widest text-center">
+                      <th className="px-4 py-3 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Estado
                       </th>
-                      <th className="px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-widest text-right">
+                      <th className="px-4 py-3 text-right text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Acciones
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/30">
+                  <tbody className="divide-y divide-border/60">
                     {boletines.map((boletin) => (
                       <tr
                         key={boletin.id}
-                        className="hover:bg-muted/20 transition-colors group"
+                        className="group transition-colors hover:bg-muted/40"
                       >
                         <td className="px-4 py-4">
                           <span className="font-mono text-sm text-primary bg-primary/10 px-2 py-1 rounded">
@@ -441,8 +465,8 @@ export default function ListarBoletinesClient({
                           </div>
                         </td>
                         <td className="px-4 py-4 text-center">
-                          <span className="bg-muted/50 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground border border-border/50 whitespace-nowrap">
-                            {boletin.audio_count} info
+                          <span className="whitespace-nowrap rounded-full border border-border/60 bg-muted/50 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                            {boletin.audio_count} audio
                             {boletin.audio_count !== 1 ? "s" : ""}
                           </span>
                         </td>
@@ -506,7 +530,7 @@ export default function ListarBoletinesClient({
               {boletines.map((boletin) => (
                 <div
                   key={boletin.id}
-                  className="glass-panel rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-3 sm:p-4 hover:border-primary/20 transition-colors"
+                  className="rounded-xl border border-border bg-card p-3 shadow-sm transition-colors hover:border-primary/30 sm:p-4"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -516,7 +540,7 @@ export default function ListarBoletinesClient({
                       {getStatusBadge(boletin.active)}
                       <span className="bg-muted/50 px-2 py-0.5 rounded-full text-xs font-medium text-muted-foreground border border-border/50 hidden sm:inline-flex">
                         <FileText className="size-3 mr-1" />
-                        {boletin.audio_count} info
+                        {boletin.audio_count} audio
                         {boletin.audio_count !== 1 ? "s" : ""}
                       </span>
                     </div>
@@ -641,7 +665,7 @@ export default function ListarBoletinesClient({
                   <div className="mt-2 sm:hidden">
                     <span className="inline-flex items-center gap-1 bg-muted/50 px-2.5 py-0.5 rounded-full text-xs font-medium text-muted-foreground border border-border/50">
                       <FileText className="size-3" />
-                      {boletin.audio_count} info
+                      {boletin.audio_count} audio
                       {boletin.audio_count !== 1 ? "s" : ""}
                     </span>
                   </div>
